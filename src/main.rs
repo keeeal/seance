@@ -3,6 +3,9 @@ use bevy::prelude::{App, EventReader, WindowDescriptor, DefaultPlugins, IntoSyst
 mod concepts;
 use concepts::ConceptPlugin;
 
+mod dialogue;
+use dialogue::DialoguePlugin;
+
 mod ghost;
 use ghost::{GhostPlugin, GhostInteractionEvent};
 
@@ -27,6 +30,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(GhostPlugin)
         .add_plugin(ConceptPlugin)
+        .add_plugin(DialoguePlugin)
         .add_plugin(RoomPlugin)
         .add_system(ghost_interactions.system())
         .run();
