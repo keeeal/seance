@@ -14,37 +14,37 @@ fn startup(
         .spawn_bundle(OrthographicCameraBundle::new_2d())
         .insert(InteractionSource::default());
 
-    // load textures from sprite sheets
-    let trashcan_texture = asset_server.load("trashcan.png");
-    let trashcan_atlas = texture_atlases.add(
-        TextureAtlas::from_grid(trashcan_texture, Vec2::new(24., 24.), 2, 1)
+    // load background
+    let background_texture = asset_server.load("background.png");
+    let background_atlas = texture_atlases.add(
+        TextureAtlas::from_grid(background_texture, Vec2::new(1920., 1080.), 1, 1)
     );
 
+    let background = commands
+        .spawn_bundle(SpriteSheetBundle {
+            texture_atlas: background_atlas,
+            transform: Transform::from_xyz(0., 0., 0.),
+            ..Default::default()
+        })
+        .id();
+    
+    let mut entities = vec![background];
+
+    // load sprites
     let trash_texture = asset_server.load("trash.png");
     let trash_atlas = texture_atlases.add(
         TextureAtlas::from_grid(trash_texture, Vec2::new(24., 24.), 3, 1)
     );
 
-    // define a trashcan and add to the entities vector
-    let trashcan = commands
-        .spawn_bundle(SpriteSheetBundle {
-            texture_atlas: trashcan_atlas,
-            transform: Transform::from_xyz(0., 0., 0.),
-            ..Default::default()
-        })
-        .id();
-
-    let mut entities = vec![trashcan];
-
-    // define three trash bags and push them onto entities too
+    // place some clickable entities
     for i in 0..3 {
         let trash = commands
             .spawn_bundle(SpriteSheetBundle {
                 texture_atlas: trash_atlas.clone(),
+                sprite: TextureAtlasSprite::new(i),
                 transform: Transform::from_xyz(
                     random::<f32>()*100.-50., random::<f32>()*100.-50.,0.
                 ),
-                sprite: TextureAtlasSprite::new(i),
                 ..Default::default()
             })
             .insert(Interactable {
@@ -57,20 +57,14 @@ fn startup(
         entities.push(trash);
     }
 
-    // spawn each entity at 3x scale
+    // spawn each entity
     commands
         .spawn()
         .insert_bundle((
-            Transform {
-                scale: Vec3::new(3., 3., 3.),
-                ..Default::default()
-            },
+            Transform::default(),
             GlobalTransform::default(),
         ))
-        .push_children(&entities)
-        .id();
-    
-    // what is the purpose of .id() ??
+        .push_children(&entities);
 }
 
 
