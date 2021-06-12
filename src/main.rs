@@ -4,6 +4,7 @@ use rand::prelude::*;
 
 struct Clickable;
 
+struct MoveTo { target: Vec3, vel: f32 }
 
 fn startup(
     mut commands: Commands,
@@ -25,6 +26,10 @@ fn startup(
             texture_atlas: background_atlas,
             transform: Transform::from_xyz(0., 0., 0.),
             ..Default::default()
+        })
+        .insert(MoveTo {
+            target: Vec3::new(5., 8., 0.),
+            vel: 50.
         })
         .id();
     
@@ -71,16 +76,39 @@ fn startup(
 fn click(
     mouse_button_input: Res<Input<MouseButton>>,
     interaction_state: Res<InteractionState>,
+    target_query: Query<&Transform>,
+    mut moveable_query: Query<&mut MoveTo>
 ) {
     if !mouse_button_input.just_pressed(MouseButton::Left) {
         return
     }
 
-    if !interaction_state.ordered_interact_list_map.is_empty() {
-        info!("entity clicked");
+    for (_group, interact_list) in &interaction_state.ordered_interact_list_map {
+        for (click_target, pos) in interact_list {
+            if let Ok(target_coords) = target_query.get(*click_target) {
+                info!("YESBOSS {} {}", target_coords.translation, pos);
+                if let Ok(mut moveable) = moveable_query.single_mut() {
+                    moveable.target = target_coords.translation
+                }
+            }
+        }
     }
 }
 
+fn move_system(time: Res<Time>, mut q: Query<(&MoveTo, &mut Transform)>) {
+    let delta = time.delta_seconds();
+
+    for (move_to, mut t) in q.iter_mut() {
+        let direction = move_to.target - t.translation;
+        let distance = delta * move_to.vel;
+        if direction.length() < distance {
+            t.translation = move_to.target;
+        } else {
+            let norm_direction = direction.normalize();
+            t.translation += distance * norm_direction;
+        }
+    }
+}
 
 fn main() {
     App::build()
@@ -95,5 +123,6 @@ fn main() {
         .add_plugin(InteractionPlugin)
         .add_startup_system(startup.system())
         .add_system(click.system())
+        .add_system(move_system.system())
         .run();
 }
