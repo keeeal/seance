@@ -1,10 +1,14 @@
 use bevy::prelude::*;
-use bevy_interact_2d::{Interactable, InteractionPlugin, InteractionSource, InteractionState};
+use bevy_interact_2d::{Interactable, InteractionPlugin, InteractionSource, InteractionState, Group};
 use rand::prelude::*;
 
 struct Clickable;
 
 struct MoveTo { target: Vec3, vel: f32 }
+struct ConceptSource(String);
+
+const WORLD: Group = Group(0);
+const UI: Group = Group(1);
 
 fn startup(
     mut commands: Commands,
@@ -54,9 +58,11 @@ fn startup(
             })
             .insert(Interactable {
                 bounding_box: (Vec2::new(-12., -12.), Vec2::new(12., 12.)),
+                groups: vec![WORLD],
                 ..Default::default()
             })
             .insert(Clickable)
+            .insert(ConceptSource(format!("Entity {}", i)))
             .id();
 
         entities.push(trash);
@@ -77,20 +83,26 @@ fn click(
     mouse_button_input: Res<Input<MouseButton>>,
     interaction_state: Res<InteractionState>,
     target_query: Query<&Transform>,
-    mut moveable_query: Query<&mut MoveTo>
+    mut moveable_query: Query<&mut MoveTo>,
+    concept_query: Query<&ConceptSource>,
 ) {
     if !mouse_button_input.just_pressed(MouseButton::Left) {
         return
     }
 
-    for (_group, interact_list) in &interaction_state.ordered_interact_list_map {
-        for (click_target, pos) in interact_list {
-            if let Ok(target_coords) = target_query.get(*click_target) {
-                info!("YESBOSS {} {}", target_coords.translation, pos);
-                if let Ok(mut moveable) = moveable_query.single_mut() {
-                    moveable.target = target_coords.translation
-                }
+    for (click_target, pos) in interaction_state.get_group(WORLD) {
+        if let Ok(target_coords) = target_query.get(click_target) {
+            info!("YESBOSS {} {}", target_coords.translation, pos);
+            if let Ok(mut moveable) = moveable_query.single_mut() {
+                moveable.target = target_coords.translation
             }
+        }
+    }
+
+    for (e, _) in interaction_state.get_group(WORLD) {
+        if let Ok(src) = concept_query.get(e) {
+            info!("{} clicked", src.0);
+            break
         }
     }
 }
