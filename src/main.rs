@@ -17,7 +17,7 @@ fn startup(
     // load background
     let background_texture = asset_server.load("background.png");
     let background_atlas = texture_atlases.add(
-        TextureAtlas::from_grid(background_texture, Vec2::new(1920., 1080.), 1, 1)
+        TextureAtlas::from_grid(background_texture, Vec2::new(1280., 720.), 1, 1)
     );
 
     let background = commands
@@ -84,6 +84,13 @@ fn click(
 
 fn main() {
     App::build()
+        .insert_resource(WindowDescriptor {
+            title: String::from("Seance"),
+            width: 1280.,
+            height: 720.,
+            resizable: false,
+            ..Default::default()
+        })
         .add_plugins(DefaultPlugins)
         .add_plugin(InteractionPlugin)
         .add_startup_system(startup.system())
