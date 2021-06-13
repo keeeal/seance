@@ -1,5 +1,8 @@
 use bevy::prelude::{
-    Plugin, AppBuilder, Query, With, Res, Time, Commands, Entity, IntoSystem, EventWriter,
+    Commands, Plugin, AppBuilder, IntoSystem, TextBundle, Style, AlignSelf,
+    PositionType, Rect, Val, Text, TextStyle, Color, TextAlignment,
+    HorizontalAlign, Res, AssetServer, Time, Query, With, UiCameraBundle,
+    EventWriter, Entity
 };
 use crate::concepts::Evoked;
 use std::time::Duration;
@@ -148,13 +151,94 @@ pub fn progress_dialogue(
 
 }
 
+fn dialogue_startup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+) {
+    commands
+        .spawn_bundle(UiCameraBundle::default());
+    
+    commands
+        .spawn()
+        .insert(
+            Line {
+                text: "Hello world!".to_string(),
+                priority: 0,
+                duration: Duration::from_secs(3),
+                repeatable: true,
+                responds_to_concepts: vec![],
+                groups: vec![],
+                animations: vec![],
+                requires_concepts: vec![],
+                consumes_concepts: vec![],
+                requires_spoken: vec![],
+                conflicts_spoken: vec![],
+            }
+        )
+        .insert(
+            Spoken(vec![Duration::from_secs(1)])
+        );
+    
+    commands
+        .spawn_bundle(TextBundle {
+            style: Style {
+                align_self: AlignSelf::FlexEnd,
+                position_type: PositionType::Absolute,
+                position: Rect {
+                    bottom: Val::Px(5.0),
+                    right: Val::Px(15.0),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .insert(TextBox {
+            style: TextStyle {
+                font: asset_server.load("GloriaHallelujah-Regular.ttf"),
+                font_size: 100.0,
+                color: Color::WHITE,
+            },
+            alignment: TextAlignment {
+                horizontal: HorizontalAlign::Center,
+                ..Default::default()
+            }
+        });
+}
+
+struct TextBox {
+    style: TextStyle,
+    alignment: TextAlignment,
+}
+
+fn render_lines(
+    mut commands: Commands,
+    time: Res<Time>,
+    text: Query<(Entity, &TextBox)>,
+    lines: Query<&Line, With<Speaking>>,
+    
+) {
+    if let Some(line) = lines.iter().next() {
+        for (e, t) in text.iter() {
+            commands
+                .entity(e)
+                .insert(Text::with_section(
+                    &line.text,
+                    t.style.clone(),
+                    t.alignment,
+                ));
+        }
+    }
+}
+
 pub struct DialoguePlugin;
 
 impl Plugin for DialoguePlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app
-            .add_system(progress_dialogue.system())
+        app.add_system(progress_dialogue.system())
             .add_event::<AnimationStartEvent>()
             .add_event::<AnimationEndEvent>();
+        app.add_startup_system(dialogue_startup.system());
+        app.add_system(render_lines.system());
     }
 }
