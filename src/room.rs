@@ -1,12 +1,12 @@
+use crate::concepts::{Concept, EvokesConcept};
+use crate::ghost::{ghost_bundle, Clickable};
+use crate::animation::{animation_bundle, AnimationDefinition, TALK_ANIMATION};
+use rand::Rng;
 use bevy::prelude::{
-    Commands, Res, AssetServer, ResMut, Assets, TextureAtlas,
-    OrthographicCameraBundle, Vec2, SpriteSheetBundle,
-    Transform, Plugin, AppBuilder, IntoSystem,
+    AppBuilder, AssetServer, Assets, Commands, IntoSystem, OrthographicCameraBundle, Plugin, Res,
+    ResMut, SpriteSheetBundle, TextureAtlas, Transform, Vec2,
 };
 use bevy_interact_2d::{Interactable, InteractionSource};
-use crate::ghost::{Clickable, ghost_bundle};
-use crate::concepts::{Concept, EvokesConcept};
-
 
 pub fn startup(
     mut commands: Commands,
@@ -19,9 +19,12 @@ pub fn startup(
 
     // load background
     let background_texture = asset_server.load("background.png");
-    let background_atlas = texture_atlases.add(
-        TextureAtlas::from_grid(background_texture, Vec2::new(1280., 720.), 1, 1)
-    );
+    let background_atlas = texture_atlases.add(TextureAtlas::from_grid(
+        background_texture,
+        Vec2::new(3840., 2160.),
+        1,
+        1,
+    ));
 
     let _background = commands
         .spawn_bundle(SpriteSheetBundle {
@@ -29,6 +32,35 @@ pub fn startup(
             transform: Transform::from_xyz(1., 0., 0.),
             ..Default::default()
         })
+        .id();
+
+    // load medium
+    let medium_texture = asset_server.load("characters/medium.png");
+    let medium_atlas = texture_atlases.add(TextureAtlas::from_grid(
+        medium_texture,
+        Vec2::new(250.0, 700.0),
+        3,
+        3,
+    ));
+
+    let medium_idle = AnimationDefinition::WithState(|state| match state {
+        0 => {
+            let mut rng = rand::thread_rng();
+            (5, rng.gen_range(16..32))
+        }
+        1 => (4, 0),
+        i => (3, i-1)
+    });
+    
+    let medium_talk_frames = vec![0,1,2];
+
+    let _medium = commands
+        .spawn_bundle(SpriteSheetBundle {
+            texture_atlas: medium_atlas,
+            transform: Transform::from_xyz(20., -760., 0.),
+            ..Default::default()
+        })
+        .insert_bundle(animation_bundle(TALK_ANIMATION, medium_talk_frames))
         .id();
 
     // load ghost
@@ -51,32 +83,26 @@ pub fn startup(
 
     let youth = commands
         .spawn()
-        .insert(
-            Concept{
-                description: String::from("Youth/Horse"),
-                parents: vec![],
-            }
-        )
+        .insert(Concept {
+            description: String::from("Youth/Horse"),
+            parents: vec![],
+        })
         .id();
 
     let time = commands
         .spawn()
-        .insert(
-            Concept{
-                description: String::from("Time"),
-                parents: vec![],
-            }
-        )
+        .insert(Concept {
+            description: String::from("Time"),
+            parents: vec![],
+        })
         .id();
 
     let _past = commands
         .spawn()
-        .insert(
-            Concept{
-                description: String::from("Past"),
-                parents: vec![[youth, time].iter().copied().collect()],
-            }
-        )
+        .insert(Concept {
+            description: String::from("Past"),
+            parents: vec![[youth, time].iter().copied().collect()],
+        })
         .id();
 
     // place some clickable entities
@@ -121,7 +147,6 @@ pub fn startup(
         .insert(Clickable)
         .insert(EvokesConcept(time))
         .id();
-
 
     // commands
     //     .entity(entities[1])
