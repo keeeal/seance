@@ -95,6 +95,7 @@ pub fn startup(
     let mother_happy_frames = vec![3, 4, 5];
     let mother_scared_frames = vec![6, 7, 8];
     let mother_talk_frames = vec![9, 10, 11];
+    let mother_leave_frames = vec![12];
     let _mother = commands
         .spawn_bundle(SpriteSheetBundle {
             texture_atlas: mother_atlas,
@@ -105,7 +106,8 @@ pub fn startup(
             (BLINK_ANIMATION, mother_default_frames),
             [("mother_happy".to_string(), (BLINK_ANIMATION, mother_happy_frames)),
              ("mother_scared".to_string(), (BLINK_ANIMATION, mother_scared_frames)),
-             ("mother_talk".to_string(), (TALK_ANIMATION, mother_talk_frames))].iter().cloned().collect(),
+             ("mother_talk".to_string(), (TALK_ANIMATION, mother_talk_frames)),
+             ("mother_leave".to_string(), (AnimationDefinition::Simple, mother_leave_frames))].iter().cloned().collect(),
         ))
         .id();
 
@@ -122,6 +124,7 @@ pub fn startup(
     let twin1_happy_frames = vec![3, 4, 5];
     let twin1_scared_frames = vec![6, 7, 8];
     let twin1_talk_frames = vec![9, 10, 11];
+    let twin1_leave_frames = vec![12];
     let _twin1 = commands
         .spawn_bundle(SpriteSheetBundle {
             texture_atlas: twin1_atlas,
@@ -132,6 +135,7 @@ pub fn startup(
             (BLINK_ANIMATION, twin1_default_frames),
             [("twin1_happy".to_string(), (BLINK_ANIMATION, twin1_happy_frames)),
              ("twin1_scared".to_string(), (BLINK_ANIMATION, twin1_scared_frames)),
+             ("twin1_leave".to_string(), (AnimationDefinition::Simple, twin1_leave_frames)),
              ("twin1_talk".to_string(), (TALK_ANIMATION, twin1_talk_frames))].iter().cloned().collect(),
         ))
         .id();
@@ -149,6 +153,7 @@ pub fn startup(
     let twin2_happy_frames = vec![3, 4, 5];
     let twin2_scared_frames = vec![6, 7, 8];
     let twin2_talk_frames = vec![9, 10, 11];
+    let twin2_leave_frames = vec![12];
     let _twin2 = commands
         .spawn_bundle(SpriteSheetBundle {
             texture_atlas: twin2_atlas,
@@ -159,6 +164,7 @@ pub fn startup(
             (BLINK_ANIMATION, twin2_default_frames),
             [("twin2_happy".to_string(), (BLINK_ANIMATION, twin2_happy_frames)),
              ("twin2_scared".to_string(), (BLINK_ANIMATION, twin2_scared_frames)),
+             ("twin2_leave".to_string(), (AnimationDefinition::Simple, twin2_leave_frames)),
              ("twin2_talk".to_string(), (TALK_ANIMATION, twin2_talk_frames))].iter().cloned().collect(),
         ))
         .id();
@@ -550,7 +556,7 @@ pub fn startup(
                 text: "Margaret: It’s really him. I used to sing this... Sniff *Looks down and tears*".to_string(),
                 priority: 5,
                 duration: Duration::from_secs(3),
-                starts_animations: vec!["mother_sad".to_string()],
+                starts_animations: vec!["mother_scared".to_string()],
                 requires_spoken: vec![s1_margaret_a3_a],
                 ..Default::default()
             }
