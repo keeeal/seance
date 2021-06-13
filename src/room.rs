@@ -1,13 +1,12 @@
 use crate::concepts::{Concept, EvokesConcept};
-use crate::ghost::{ghost_bundle, Clickable};
+use crate::ghost::ghost_bundle;
 use crate::animation::{animation_bundle, AnimationDefinition, TALK_ANIMATION, BLINK_ANIMATION};
 use crate::dialogue::{Line};
-use rand::Rng;
 use bevy::prelude::{
     AppBuilder, AssetServer, Assets, Commands, IntoSystem, OrthographicCameraBundle, Plugin, Res,
-    ResMut, SpriteSheetBundle, TextureAtlas, Transform, Vec2, Vec3, Visible,
+    ResMut, SpriteSheetBundle, TextureAtlas, Transform, Vec2, Vec3,
 };
-use bevy_interact_2d::{Interactable, InteractionSource};
+use bevy_interact_2d::InteractionSource;
 use std::time::Duration;
 
 pub fn startup(
@@ -211,6 +210,7 @@ pub fn startup(
                 priority: 5,
                 duration: Duration::from_secs(40),
                 starts_animations: vec!["narrator_talk".to_string()],
+                requires_spoken: vec![s1_pause],
                 audio: Some(asset_server.load("dialogue/NAR.S1.Introduction.mp3")),
                 ..Default::default()
             }
@@ -288,7 +288,7 @@ pub fn startup(
                 ).to_string(),
                 priority: 5,
                 question: Some("If there is someone with us, give us a sign?".to_string()),
-                duration: Duration::from_secs(9),
+                duration: Duration::from_secs(7),
                 ends_animations: vec!["medium_talk".to_string()],
                 requires_spoken: vec![s1_medium_q1_a],
                 ..Default::default()

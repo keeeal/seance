@@ -1,5 +1,4 @@
-use crate::concepts::{ClearsConcepts, Concept, EvokesConcept};
-use crate::ghost::GhostInteractionEvent;
+use crate::concepts::{Concept, Evoked};
 
 use bevy::prelude::{
     AlignSelf, AppBuilder, AssetServer, Color, Commands, EventReader,
@@ -47,10 +46,7 @@ fn question_system(
     asset_server: Res<AssetServer>,
     mut ev_set: EventReader<SetQuestionEvent>,
     mut ev_clear: EventReader<ClearQuestionEvent>,
-    evoke_query: Query<&EvokesConcept>,
-    clear_query: Query<&ClearsConcepts>,
-    concept_query: Query<&Concept>,
-    mut ev_interaction: EventReader<GhostInteractionEvent>,
+    concept_query: Query<(&Concept, &Evoked)>,
 ) {
     if let Ok((_, mut text)) = text_query.single_mut() {
         for SetQuestionEvent(q) in ev_set.iter() {
@@ -69,24 +65,20 @@ fn question_system(
         }
 
         if !text.sections.is_empty() {
-            for GhostInteractionEvent { ghost: _, target } in ev_interaction.iter() {
-                if let Ok(&EvokesConcept(concept)) = evoke_query.get(*target) {
-                    if let Ok(c) = concept_query.get(concept) {
-                        text.sections.push(TextSection {
-                            value: c.description.to_string() + "\n",
-                            style: TextStyle {
-                                font: asset_server.load("GloriaHallelujah-Regular.ttf"),
-                                font_size: 80.0,
-                                color: Color::WHITE,
-                            },
-                        });
-                    }
-                }
-
-                if clear_query.get(*target).is_ok() {
-                    text.sections = vec![text.sections[0].clone()];
-                    break;
-                }
+            text.sections.truncate(1);
+            let mut concepts = concept_query
+                .iter()
+                .collect::<Vec<_>>();
+            concepts.sort_by_key(|(_, Evoked(timestamp))| timestamp);
+            for (c, _) in &concepts {
+                text.sections.push(TextSection {
+                    value: c.description.to_string() + "\n",
+                    style: TextStyle {
+                        font: asset_server.load("GloriaHallelujah-Regular.ttf"),
+                        font_size: 80.0,
+                        color: Color::WHITE,
+                    },
+                });
             }
         }
     }
