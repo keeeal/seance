@@ -325,12 +325,15 @@ pub fn startup(
 
     let s1_pause = commands
         .spawn()
-        .insert(Line {
-            text: "".to_string(),
-            priority: 5,
-            duration: Duration::from_secs(3),
-            ..Default::default()
-        })
+        .insert(
+            Line {
+                text: "".to_string(),
+                priority: 5,
+                duration: Duration::from_secs(3),
+                audio: Some(asset_server.load("BGM_SC1_Introduction.mp3")),
+                ..Default::default()
+            }
+        )
         .id();
 
     let s1_introduction_a = commands
