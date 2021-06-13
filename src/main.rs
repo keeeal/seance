@@ -15,6 +15,9 @@ use room::RoomPlugin;
 mod animation;
 use animation::AnimationPlugin;
 
+mod question_display;
+use question_display::QuestionDisplayPlugin;
+
 fn ghost_interactions(mut event_reader: EventReader<GhostInteractionEvent>) {
     for GhostInteractionEvent { ghost, target } in event_reader.iter() {
         eprintln!("Entity {:?} interacted with {:?}", ghost, target);
@@ -36,6 +39,7 @@ fn main() {
         .add_plugin(DialoguePlugin)
         .add_plugin(RoomPlugin)
         .add_plugin(AnimationPlugin)
+        .add_plugin(QuestionDisplayPlugin)
         .add_system(ghost_interactions.system())
         .run();
 }

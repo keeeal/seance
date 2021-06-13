@@ -192,7 +192,7 @@ fn dialogue_startup(
                 align_content: AlignContent::Center,
                 position_type: PositionType::Absolute,
                 position: Rect {
-                    top: Val::Px(3. * 5.0),
+                    bottom: Val::Px(3. * 5.0),
                     left: Val::Px(3. * 15.0),
                     right: Val::Px(3. * 15.0),
                     ..Default::default()

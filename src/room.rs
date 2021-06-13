@@ -45,9 +45,8 @@ pub fn startup(
         3,
     ));
 
-    let medium_talk_frames = vec![0,1,2];
-    let medium_blink_frames = vec![3,4,5];
-
+    let medium_talk_frames = vec![0, 1, 2];
+    let medium_blink_frames = vec![3, 4, 5];
     let _medium = commands
         .spawn_bundle(SpriteSheetBundle {
             texture_atlas: medium_atlas,
@@ -65,12 +64,11 @@ pub fn startup(
         3,
         4,
     ));
-    
-    let mother_default_frames = vec![0,1,2];
-    let mother_happy_frames = vec![3,4,5];
-    let mother_scared_frames = vec![6,7,8];
-    let mother_talk_frames = vec![9,10,11];
 
+    let mother_default_frames = vec![0, 1, 2];
+    let mother_happy_frames = vec![3, 4, 5];
+    let mother_scared_frames = vec![6, 7, 8];
+    let mother_talk_frames = vec![9, 10, 11];
     let _mother = commands
         .spawn_bundle(SpriteSheetBundle {
             texture_atlas: mother_atlas,
@@ -88,12 +86,11 @@ pub fn startup(
         3,
         4,
     ));
-    
-    let twin1_default_frames = vec![0,1,2];
-    let twin1_happy_frames = vec![3,4,5];
-    let twin1_scared_frames = vec![6,7,8];
-    let twin1_talk_frames = vec![9,10,11];
 
+    let twin1_default_frames = vec![0, 1, 2];
+    let twin1_happy_frames = vec![3, 4, 5];
+    let twin1_scared_frames = vec![6, 7, 8];
+    let twin1_talk_frames = vec![9, 10, 11];
     let _twin1 = commands
         .spawn_bundle(SpriteSheetBundle {
             texture_atlas: twin1_atlas,
@@ -102,7 +99,7 @@ pub fn startup(
         })
         .insert_bundle(animation_bundle(BLINK_ANIMATION, twin1_default_frames))
         .id();
-        
+
     // load twin2
     let twin2_texture = asset_server.load("characters/twin2.png");
     let twin2_atlas = texture_atlases.add(TextureAtlas::from_grid(
@@ -111,11 +108,11 @@ pub fn startup(
         3,
         4,
     ));
-    
-    let twin2_default_frames = vec![0,1,2];
-    let twin2_happy_frames = vec![3,4,5];
-    let twin2_scared_frames = vec![6,7,8];
-    let twin2_talk_frames = vec![9,10,11];
+
+    let twin2_default_frames = vec![0, 1, 2];
+    let twin2_happy_frames = vec![3, 4, 5];
+    let twin2_scared_frames = vec![6, 7, 8];
+    let twin2_talk_frames = vec![9, 10, 11];
     let _twin2 = commands
         .spawn_bundle(SpriteSheetBundle {
             texture_atlas: twin2_atlas,
@@ -124,7 +121,6 @@ pub fn startup(
         })
         .insert_bundle(animation_bundle(BLINK_ANIMATION, twin2_happy_frames))
         .id();
-
 
     // load ghost
     let ghost_texture = asset_server.load("ghost.png");
