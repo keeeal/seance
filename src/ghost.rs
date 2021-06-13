@@ -2,7 +2,7 @@ use bevy::prelude::{
     Plugin, Res, Transform, Input, MouseButton, AppBuilder,
     Entity, Vec3, Query, With, EventWriter, Time, IntoSystem,
 };
-use bevy_interact_2d::{InteractionPlugin, InteractionState};
+use bevy_interact_2d::{InteractionPlugin, InteractionState,Group};
 
 pub struct Clickable;
 
@@ -21,7 +21,7 @@ pub fn ghost_bundle() -> (MoveTo,) {
     (
         MoveTo {
             target: None,
-            vel: 50.,
+            vel: 500.,
             interact_radius: 100.,
         },
     )
@@ -37,12 +37,21 @@ fn click(
         return;
     }
 
-    for (e, _) in interaction_state.get_group(Default::default()) {
-        if let Ok(transform) = target_query.get(e) {
-            if let Ok(mut moveable) = moveable_query.single_mut() {
-                moveable.target = Some((e, transform.translation))
+    println!("CLICKED A THING");
+
+
+    for (group, things) in interaction_state.ordered_interact_list_map.iter() {
+        println!("GROUP");
+        for (e, _) in things {
+            println!("YEE");
+            if let Ok(transform) = target_query.get(*e) {
+                println!("fldkjf");
+                if let Ok(mut moveable) = moveable_query.single_mut() {
+                    eprintln!("SETTING TARGET {}", e.id());
+                    moveable.target = Some((*e, transform.translation))
+                }
+                break;
             }
-            break;
         }
     }
 }

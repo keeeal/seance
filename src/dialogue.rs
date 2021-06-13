@@ -237,7 +237,7 @@ fn dialogue_startup(
         .insert(TextBox {
             style: TextStyle {
                 font: asset_server.load("GloriaHallelujah-Regular.ttf"),
-                font_size: 100.0,
+                font_size: 30.0,
                 color: Color::WHITE,
             },
             alignment: TextAlignment {

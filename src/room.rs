@@ -1,13 +1,15 @@
+use crate::animation::{animation_bundle, AnimationDefinition, BLINK_ANIMATION, TALK_ANIMATION};
 use crate::concepts::{Concept, EvokesConcept};
+use crate::dialogue::Line;
 use crate::ghost::{ghost_bundle, Clickable};
-use crate::animation::{animation_bundle, AnimationDefinition, TALK_ANIMATION, BLINK_ANIMATION};
-use crate::dialogue::{Line};
-use rand::Rng;
 use bevy::prelude::{
-    AppBuilder, AssetServer, Assets, Commands, IntoSystem, OrthographicCameraBundle, Plugin, Res,
-    ResMut, SpriteSheetBundle, TextureAtlas, Transform, Vec2, Vec3, Visible,
+    AppBuilder, AssetServer, Assets, Commands, Handle, IntoSystem, OrthographicCameraBundle,
+    Plugin, Res, ResMut, SpriteSheetBundle, Texture, TextureAtlas, Transform, Val, Vec2, Vec3,
+    Visible,
 };
-use bevy_interact_2d::{Interactable, InteractionSource};
+use bevy::sprite::Rect;
+use bevy_interact_2d::{Interactable, InteractionSource, Group};
+use rand::Rng;
 use std::time::Duration;
 
 pub fn startup(
@@ -15,10 +17,14 @@ pub fn startup(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
+    let mut cam_bundle = OrthographicCameraBundle::new_2d();
+    cam_bundle.orthographic_projection.scale = 3.;
+
     commands
-        .spawn_bundle(OrthographicCameraBundle::new_2d())
+        .spawn_bundle(cam_bundle)
         .insert(InteractionSource::default());
 
+    let click_group = Group(0);
     // load background
     let background_texture = asset_server.load("background.png");
     let background_atlas = texture_atlases.add(TextureAtlas::from_grid(
@@ -55,7 +61,13 @@ pub fn startup(
         })
         .insert_bundle(animation_bundle(
             (BLINK_ANIMATION, medium_blink_frames),
-            [("medium_talk".to_string(), (TALK_ANIMATION, medium_talk_frames))].iter().cloned().collect(),
+            [(
+                "medium_talk".to_string(),
+                (TALK_ANIMATION, medium_talk_frames),
+            )]
+            .iter()
+            .cloned()
+            .collect(),
         ))
         .id();
 
@@ -80,9 +92,23 @@ pub fn startup(
         })
         .insert_bundle(animation_bundle(
             (BLINK_ANIMATION, mother_default_frames),
-            [("mother_happy".to_string(), (BLINK_ANIMATION, mother_happy_frames)),
-             ("mother_scared".to_string(), (BLINK_ANIMATION, mother_scared_frames)),
-             ("mother_talk".to_string(), (TALK_ANIMATION, mother_talk_frames))].iter().cloned().collect(),
+            [
+                (
+                    "mother_happy".to_string(),
+                    (BLINK_ANIMATION, mother_happy_frames),
+                ),
+                (
+                    "mother_scared".to_string(),
+                    (BLINK_ANIMATION, mother_scared_frames),
+                ),
+                (
+                    "mother_talk".to_string(),
+                    (TALK_ANIMATION, mother_talk_frames),
+                ),
+            ]
+            .iter()
+            .cloned()
+            .collect(),
         ))
         .id();
 
@@ -107,9 +133,23 @@ pub fn startup(
         })
         .insert_bundle(animation_bundle(
             (BLINK_ANIMATION, twin1_default_frames),
-            [("twin1_happy".to_string(), (BLINK_ANIMATION, twin1_happy_frames)),
-             ("twin1_scared".to_string(), (BLINK_ANIMATION, twin1_scared_frames)),
-             ("twin1_talk".to_string(), (TALK_ANIMATION, twin1_talk_frames))].iter().cloned().collect(),
+            [
+                (
+                    "twin1_happy".to_string(),
+                    (BLINK_ANIMATION, twin1_happy_frames),
+                ),
+                (
+                    "twin1_scared".to_string(),
+                    (BLINK_ANIMATION, twin1_scared_frames),
+                ),
+                (
+                    "twin1_talk".to_string(),
+                    (TALK_ANIMATION, twin1_talk_frames),
+                ),
+            ]
+            .iter()
+            .cloned()
+            .collect(),
         ))
         .id();
 
@@ -134,9 +174,23 @@ pub fn startup(
         })
         .insert_bundle(animation_bundle(
             (BLINK_ANIMATION, twin2_default_frames),
-            [("twin2_happy".to_string(), (BLINK_ANIMATION, twin2_happy_frames)),
-             ("twin2_scared".to_string(), (BLINK_ANIMATION, twin2_scared_frames)),
-             ("twin2_talk".to_string(), (TALK_ANIMATION, twin2_talk_frames))].iter().cloned().collect(),
+            [
+                (
+                    "twin2_happy".to_string(),
+                    (BLINK_ANIMATION, twin2_happy_frames),
+                ),
+                (
+                    "twin2_scared".to_string(),
+                    (BLINK_ANIMATION, twin2_scared_frames),
+                ),
+                (
+                    "twin2_talk".to_string(),
+                    (TALK_ANIMATION, twin2_talk_frames),
+                ),
+            ]
+            .iter()
+            .cloned()
+            .collect(),
         ))
         .id();
 
@@ -156,6 +210,60 @@ pub fn startup(
             ..Default::default()
         })
         .insert_bundle(ghost_bundle())
+        .id();
+
+    // load static objects
+    let stationary_textures: Handle<Texture> = asset_server.load("objects/stationary.png");
+    // frame
+    let mut frame_atlas =
+        TextureAtlas::new_empty(stationary_textures.clone(), Vec2::new(960., 960.));
+    frame_atlas.add_texture(Rect {
+        min: Vec2::new(0., 0.),
+        max: Vec2::new(7., 8.) * 24.,
+    });
+    frame_atlas.add_texture(Rect {
+        min: Vec2::new(7., 8.) * 24.,
+        max: Vec2::new(14., 16.) * 24.,
+    });
+    let frame_atlas_id = texture_atlases.add(frame_atlas);
+
+    let _frame1 = commands
+        .spawn_bundle(SpriteSheetBundle {
+            texture_atlas: frame_atlas_id.clone(),
+            transform: (Transform::from_xyz(-900., 0., 0.) * Transform::from_scale(Vec3::new(2., 2., 2.))),
+            ..Default::default()
+        })
+        .insert(Interactable {
+            bounding_box: (Vec2::new(-168., -192.), Vec2::new(168., 192.)),
+            groups: vec![click_group],
+        })
+        .insert(Clickable)
+        .id();
+
+    let _frame2 = commands
+        .spawn_bundle(SpriteSheetBundle {
+            texture_atlas: frame_atlas_id.clone(),
+            transform: (Transform::from_xyz(-450., 0., 0.) * Transform::from_scale(Vec3::new(2., 2., 2.))),
+            ..Default::default()
+        })
+        .insert(Interactable {
+            bounding_box: (Vec2::new(-168., -192.), Vec2::new(168., 192.)),
+            groups: vec![click_group],
+        })
+        .insert(Clickable)
+        .id();
+        
+    let _frame3 = commands
+        .spawn_bundle(SpriteSheetBundle {
+            texture_atlas: frame_atlas_id.clone(),
+            transform: (Transform::from_xyz(20., 60., 0.) * Transform::from_scale(Vec3::new(2., 2., 2.))),
+            ..Default::default()
+        })
+        .insert(Interactable {
+            bounding_box: (Vec2::new(-168., -192.), Vec2::new(168., 192.)),
+            groups: vec![click_group],
+        })
+        .insert(Clickable)
         .id();
 
     // load narrator overlay
@@ -180,86 +288,85 @@ pub fn startup(
         })
         .insert_bundle(animation_bundle(
             (AnimationDefinition::Simple, vignette_frames),
-            [("narrator_talk".to_string(), (AnimationDefinition::Simple, narrator_frames))].iter().cloned().collect(),
+            [(
+                "narrator_talk".to_string(),
+                (AnimationDefinition::Simple, narrator_frames),
+            )]
+            .iter()
+            .cloned()
+            .collect(),
         ))
         .id();
 
     let s1_pause = commands
         .spawn()
-        .insert(
-            Line {
-                text: "".to_string(),
-                priority: 5,
-                duration: Duration::from_secs(3),
-                ..Default::default()
-            }
-        )
+        .insert(Line {
+            text: "".to_string(),
+            priority: 5,
+            duration: Duration::from_secs(3),
+            ..Default::default()
+        })
         .id();
 
     let s1_introduction_a = commands
         .spawn()
-        .insert(
-            Line {
-                text: concat!(
-                    "Narrator: The world is cold and dark as you wander the halls of a home you used ",
-                    "to find great comfort in. Your desire to leave it all behind is ",
-                    "palpable but still something keeps you here. The presence of the ones ",
-                    "you love. You see your daughters crying and your wife sitting quietly ",
-                    "on the bed you share. You reach out but no one notices. Even the ",
-                    "mirror on the wall refuses to portray your presence. Is this a dream?",
-                ).to_string(),
-                priority: 5,
-                duration: Duration::from_secs(40),
-                starts_animations: vec!["narrator_talk".to_string()],
-                audio: Some(asset_server.load("dialogue/NAR.S1.Introduction.mp3")),
-                ..Default::default()
-            }
-        )
+        .insert(Line {
+            text: concat!(
+                "Narrator: The world is cold and dark as you wander the halls of a home you used ",
+                "to find great comfort in. Your desire to leave it all behind is ",
+                "palpable but still something keeps you here. The presence of the ones ",
+                "you love. You see your daughters crying and your wife sitting quietly ",
+                "on the bed you share. You reach out but no one notices. Even the ",
+                "mirror on the wall refuses to portray your presence. Is this a dream?",
+            )
+            .to_string(),
+            priority: 5,
+            duration: Duration::from_secs(40),
+            starts_animations: vec!["narrator_talk".to_string()],
+            audio: Some(asset_server.load("dialogue/NAR.S1.Introduction.mp3")),
+            ..Default::default()
+        })
         .id();
     let s1_introduction_b = commands
         .spawn()
-        .insert(
-            Line {
-                text: concat!(
-                    "Narrator: Unconnected to the passage of time you watch strange happenings scare ",
-                    "your family. Are you responsible? Why can’t you leave?",
-                ).to_string(),
-                priority: 5,
-                duration: Duration::from_secs(15),
-                requires_spoken: vec![s1_introduction_a],
-                ..Default::default()
-            }
-        )
+        .insert(Line {
+            text: concat!(
+                "Narrator: Unconnected to the passage of time you watch strange happenings scare ",
+                "your family. Are you responsible? Why can’t you leave?",
+            )
+            .to_string(),
+            priority: 5,
+            duration: Duration::from_secs(15),
+            requires_spoken: vec![s1_introduction_a],
+            ..Default::default()
+        })
         .id();
     let s1_introduction_c = commands
         .spawn()
-        .insert(
-            Line {
-                text: concat!(
-                    "Narrator: Suddenly, a warm light draws you to your living room. Your family is ",
-                    "congregated around the dining table with an old friend, a medium, ",
-                    "Madam Gretchen. A seat sits empty beckoning you into the circle.",
-                ).to_string(),
-                priority: 5,
-                duration: Duration::from_secs(19),
-                ends_animations: vec!["narrator_talk".to_string()],
-                requires_spoken: vec![s1_introduction_b],
-                ..Default::default()
-            }
-        )
+        .insert(Line {
+            text: concat!(
+                "Narrator: Suddenly, a warm light draws you to your living room. Your family is ",
+                "congregated around the dining table with an old friend, a medium, ",
+                "Madam Gretchen. A seat sits empty beckoning you into the circle.",
+            )
+            .to_string(),
+            priority: 5,
+            duration: Duration::from_secs(19),
+            ends_animations: vec!["narrator_talk".to_string()],
+            requires_spoken: vec![s1_introduction_b],
+            ..Default::default()
+        })
         .id();
 
     let s1_introduction_pause = commands
         .spawn()
-        .insert(
-            Line {
-                text: "".to_string(),
-                priority: 5,
-                duration: Duration::from_secs(5),
-                requires_spoken: vec![s1_introduction_c],
-                ..Default::default()
-            }
-        )
+        .insert(Line {
+            text: "".to_string(),
+            priority: 5,
+            duration: Duration::from_secs(5),
+            requires_spoken: vec![s1_introduction_c],
+            ..Default::default()
+        })
         .id();
 
     let s1_medium_q1_a = commands
@@ -281,36 +388,34 @@ pub fn startup(
         .id();
     let s1_medium_q1_b = commands
         .spawn()
-        .insert(
-            Line {
-                text: concat!(
-                    "Madam Gretchen: Is someone here? If there is someone with us, give us a sign?",
-                ).to_string(),
-                priority: 5,
-                question: Some("If there is someone with us, give us a sign?".to_string()),
-                duration: Duration::from_secs(9),
-                ends_animations: vec!["medium_talk".to_string()],
-                requires_spoken: vec![s1_medium_q1_a],
-                ..Default::default()
-            }
-        )
+        .insert(Line {
+            text: concat!(
+                "Madam Gretchen: Is someone here? If there is someone with us, give us a sign?",
+            )
+            .to_string(),
+            priority: 5,
+            question: Some("If there is someone with us, give us a sign?".to_string()),
+            duration: Duration::from_secs(9),
+            ends_animations: vec!["medium_talk".to_string()],
+            requires_spoken: vec![s1_medium_q1_a],
+            ..Default::default()
+        })
         .id();
 
     let s1_narrator_q1_a = commands
         .spawn()
-        .insert(
-            Line {
-                text: concat!(
-                    "Narrator: The question coupled by the warm light strengthens your resolve.",
-                ).to_string(),
-                priority: 5,
-                duration: Duration::from_secs(6),
-                requires_spoken: vec![s1_medium_q1_b],
-                animations: vec!["narrator_talk".to_string()],
-                audio: Some(asset_server.load("dialogue/NAR.S1.Q1.mp3")),
-                ..Default::default()
-            }
-        )
+        .insert(Line {
+            text: concat!(
+                "Narrator: The question coupled by the warm light strengthens your resolve.",
+            )
+            .to_string(),
+            priority: 5,
+            duration: Duration::from_secs(6),
+            requires_spoken: vec![s1_medium_q1_b],
+            animations: vec!["narrator_talk".to_string()],
+            audio: Some(asset_server.load("dialogue/NAR.S1.Q1.mp3")),
+            ..Default::default()
+        })
         .id();
 }
 

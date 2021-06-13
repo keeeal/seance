@@ -58,7 +58,7 @@ fn question_system(
                 value: q.to_string() + "\n",
                 style: TextStyle {
                     font: asset_server.load("GloriaHallelujah-Regular.ttf"),
-                    font_size: 100.0,
+                    font_size: 30.0,
                     color: Color::WHITE,
                 },
             }];
@@ -76,7 +76,7 @@ fn question_system(
                             value: c.description.to_string() + "\n",
                             style: TextStyle {
                                 font: asset_server.load("GloriaHallelujah-Regular.ttf"),
-                                font_size: 80.0,
+                                font_size: 25.0,
                                 color: Color::WHITE,
                             },
                         });

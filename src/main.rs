@@ -28,9 +28,8 @@ fn main() {
     App::build()
         .insert_resource(WindowDescriptor {
             title: String::from("Seance"),
-            width: 3840.,
-            height: 2160.,
-            scale_factor_override: Some(1./3.),
+            width: 1280.,
+            height: 720.,
             ..Default::default()
         })
         .add_plugins(DefaultPlugins)
