@@ -2,7 +2,7 @@ use bevy::prelude::{
     Commands, Plugin, AppBuilder, IntoSystem, TextBundle, Style, AlignSelf,
     PositionType, Rect, Val, Text, TextStyle, Color, TextAlignment,
     HorizontalAlign, Res, AssetServer, Time, Query, With, UiCameraBundle,
-    EventWriter, Entity
+    Entity, EventWriter, Handle, AudioSource, Audio,
 };
 use crate::concepts::Evoked;
 use std::time::Duration;
@@ -11,6 +11,7 @@ pub struct Line {
     pub text: String,
     pub priority: i32,
     pub duration: Duration,
+    pub audio: Option<Handle<AudioSource>>,
     pub repeatable: bool,
     pub responds_to_concepts: Vec<Entity>,
     pub groups: Vec<Entity>,
@@ -34,6 +35,7 @@ pub fn progress_dialogue(
     spoken_query: Query<&Spoken>,
     concept_query: Query<Entity, With<Evoked>>,
     time: Res<Time>,
+    audio: Res<Audio>,
     mut commands: Commands,
     mut start_event_writer: EventWriter<AnimationStartEvent>,
     mut end_event_writer: EventWriter<AnimationEndEvent>,
@@ -121,6 +123,11 @@ pub fn progress_dialogue(
                 .insert(Speaking);
         }
 
+        // Play audio
+        if let Some(audio_handle) = &line.audio {
+            audio.play(audio_handle.clone());
+        }
+
         // Update groups
         for group in &line.groups {
             if let Ok(Spoken(timestamps)) = spoken_query.get(*group) {
@@ -157,7 +164,7 @@ fn dialogue_startup(
 ) {
     commands
         .spawn_bundle(UiCameraBundle::default());
-    
+
     commands
         .spawn()
         .insert(
@@ -165,6 +172,7 @@ fn dialogue_startup(
                 text: "Hello world!".to_string(),
                 priority: 0,
                 duration: Duration::from_secs(3),
+                audio: None,
                 repeatable: true,
                 responds_to_concepts: vec![],
                 groups: vec![],
@@ -178,7 +186,7 @@ fn dialogue_startup(
         .insert(
             Spoken(vec![Duration::from_secs(1)])
         );
-    
+
     commands
         .spawn_bundle(TextBundle {
             style: Style {
@@ -213,10 +221,8 @@ struct TextBox {
 
 fn render_lines(
     mut commands: Commands,
-    time: Res<Time>,
     text: Query<(Entity, &TextBox)>,
     lines: Query<&Line, With<Speaking>>,
-    
 ) {
     if let Some(line) = lines.iter().next() {
         for (e, t) in text.iter() {
