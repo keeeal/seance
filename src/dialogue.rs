@@ -5,6 +5,7 @@ use bevy::prelude::{
     Entity, EventWriter, Handle, AudioSource, Audio, Size, AlignContent, AlignItems,
 };
 use crate::concepts::Evoked;
+use crate::question_display::{SetQuestionEvent, ClearQuestionEvent};
 use std::time::Duration;
 
 pub struct Line {
@@ -16,6 +17,8 @@ pub struct Line {
     pub responds_to_concepts: Vec<Entity>,
     pub groups: Vec<Entity>,
     pub animations: Vec<String>,
+    pub question: Option<String>,
+    pub clear_question: bool,
     pub starts_animations: Vec<String>,
     pub ends_animations: Vec<String>,
     pub requires_concepts: Vec<Entity>,
@@ -27,20 +30,22 @@ pub struct Line {
 impl Default for Line {
     fn default() -> Line {
         Line {
-                text: "".to_string(),
-                priority: 0,
-                duration: Duration::from_secs(3),
-                audio: None,
-                repeatable: false,
-                responds_to_concepts: vec![],
-                groups: vec![],
-                animations: vec![],
-                starts_animations: vec![],
-                ends_animations: vec![],
-                requires_concepts: vec![],
-                consumes_concepts: vec![],
-                requires_spoken: vec![],
-                conflicts_spoken: vec![],
+            text: "".to_string(),
+            priority: 0,
+            duration: Duration::from_secs(3),
+            audio: None,
+            repeatable: false,
+            responds_to_concepts: vec![],
+            groups: vec![],
+            animations: vec![],
+            question: None,
+            clear_question: false,
+            starts_animations: vec![],
+            ends_animations: vec![],
+            requires_concepts: vec![],
+            consumes_concepts: vec![],
+            requires_spoken: vec![],
+            conflicts_spoken: vec![],
         }
     }
 }
@@ -62,6 +67,8 @@ pub fn progress_dialogue(
     mut commands: Commands,
     mut start_event_writer: EventWriter<AnimationStartEvent>,
     mut end_event_writer: EventWriter<AnimationEndEvent>,
+    mut clear_question_event_writer: EventWriter<ClearQuestionEvent>,
+    mut set_question_event_writer: EventWriter<SetQuestionEvent>,
 ) {
     // If a line is currently being spoken, check if it is done
     if let Some((entity, line, Spoken(timestamps))) = speaking_query.iter().next() {
@@ -79,6 +86,10 @@ pub fn progress_dialogue(
                 for animation in &line.ends_animations {
                     info!("End {}", animation);
                     end_event_writer.send(AnimationEndEvent(animation.clone()));
+                }
+
+                if line.clear_question {
+                    clear_question_event_writer.send(ClearQuestionEvent);
                 }
             }
 
@@ -179,6 +190,10 @@ pub fn progress_dialogue(
         for animation in &line.starts_animations {
             info!("Start {}", animation);
             start_event_writer.send(AnimationStartEvent(animation.clone()));
+        }
+
+        if let Some(question) = &line.question {
+            set_question_event_writer.send(SetQuestionEvent(question.clone()));
         }
 
         // Consume concepts

@@ -9,8 +9,8 @@ use bevy::prelude::{
 
 pub struct QuestionDisplay;
 
-pub struct SetQuestionEvent(String);
-pub struct ClearQuestionEvent();
+pub struct SetQuestionEvent(pub String);
+pub struct ClearQuestionEvent;
 
 fn setup(mut commands: Commands) {
     commands
@@ -64,7 +64,7 @@ fn question_system(
             }];
         }
 
-        for ClearQuestionEvent() in ev_clear.iter() {
+        for ClearQuestionEvent in ev_clear.iter() {
             text.sections = vec![];
         }
 

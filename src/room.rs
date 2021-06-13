@@ -287,6 +287,7 @@ pub fn startup(
                     "Madam Gretchen: Is someone here? If there is someone with us, give us a sign?",
                 ).to_string(),
                 priority: 5,
+                question: Some("If there is someone with us, give us a sign?".to_string()),
                 duration: Duration::from_secs(9),
                 ends_animations: vec!["medium_talk".to_string()],
                 requires_spoken: vec![s1_medium_q1_a],
