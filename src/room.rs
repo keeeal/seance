@@ -1,12 +1,14 @@
 use crate::concepts::{Concept, EvokesConcept};
 use crate::ghost::{ghost_bundle, Clickable};
 use crate::animation::{animation_bundle, AnimationDefinition, TALK_ANIMATION};
+use crate::dialogue::{Line};
 use rand::Rng;
 use bevy::prelude::{
     AppBuilder, AssetServer, Assets, Commands, IntoSystem, OrthographicCameraBundle, Plugin, Res,
     ResMut, SpriteSheetBundle, TextureAtlas, Transform, Vec2,
 };
 use bevy_interact_2d::{Interactable, InteractionSource};
+use std::time::Duration;
 
 pub fn startup(
     mut commands: Commands,
@@ -51,7 +53,7 @@ pub fn startup(
         1 => (4, 0),
         i => (3, i-1)
     });
-    
+
     let medium_talk_frames = vec![0,1,2];
 
     let _medium = commands
@@ -81,89 +83,68 @@ pub fn startup(
         .insert_bundle(ghost_bundle())
         .id();
 
-    let youth = commands
+    let s1_pause = commands
         .spawn()
-        .insert(Concept {
-            description: String::from("Youth/Horse"),
-            parents: vec![],
-        })
+        .insert(
+            Line {
+                text: "".to_string(),
+                priority: 5,
+                duration: Duration::from_secs(3),
+                ..Default::default()
+            }
+        )
         .id();
 
-    let time = commands
+    let s1_introduction_a = commands
         .spawn()
-        .insert(Concept {
-            description: String::from("Time"),
-            parents: vec![],
-        })
+        .insert(
+            Line {
+                text: concat!(
+                    "The world is cold and dark as you wander the halls of a home you used ",
+                    "to find great comfort in. Your desire to leave it all behind is ",
+                    "palpable but still something keeps you here. The presence of the ones ",
+                    "you love. You see your daughters crying and your wife sitting quietly ",
+                    "on the bed you share. You reach out but no one notices. Even the ",
+                    "mirror on the wall refuses to portray your presence. Is this a dream?",
+                ).to_string(),
+                priority: 5,
+                duration: Duration::from_secs(40),
+                audio: Some(asset_server.load("dialogue/NAR.S1.Introduction.mp3")),
+                ..Default::default()
+            }
+        )
         .id();
-
-    let _past = commands
+    let s1_introduction_b = commands
         .spawn()
-        .insert(Concept {
-            description: String::from("Past"),
-            parents: vec![[youth, time].iter().copied().collect()],
-        })
+        .insert(
+            Line {
+                text: concat!(
+                    "Unconnected to the passage of time you watch strange happenings scare ",
+                    "your family. Are you responsible? Why can’t you leave?",
+                ).to_string(),
+                priority: 5,
+                duration: Duration::from_secs(15),
+                requires_spoken: vec![s1_introduction_a],
+                ..Default::default()
+            }
+        )
         .id();
-
-    // place some clickable entities
-    let horse_texture = asset_server.load("horse.png");
-    let horse_atlas = texture_atlases.add(TextureAtlas::from_grid(
-        horse_texture,
-        Vec2::new(168., 107.),
-        1,
-        1,
-    ));
-    let _horse = commands
-        .spawn_bundle(SpriteSheetBundle {
-            texture_atlas: horse_atlas,
-            transform: Transform::from_xyz(148., -242., 0.),
-            ..Default::default()
-        })
-        .insert(Interactable {
-            bounding_box: (Vec2::new(-84., -53.), Vec2::new(84., 53.)),
-            ..Default::default()
-        })
-        .insert(Clickable)
-        .insert(EvokesConcept(youth))
+    let s1_introduction_c = commands
+        .spawn()
+        .insert(
+            Line {
+                text: concat!(
+                    "Suddenly, a warm light draws you to your living room. Your family is ",
+                    "congregated around the dining table with an old friend, a medium, ",
+                    "Madam Gretchen. A seat sits empty beckoning you into the circle.",
+                ).to_string(),
+                priority: 5,
+                duration: Duration::from_secs(25),
+                requires_spoken: vec![s1_introduction_b],
+                ..Default::default()
+            }
+        )
         .id();
-
-    let clock_texture = asset_server.load("clock.png");
-    let clock_atlas = texture_atlases.add(TextureAtlas::from_grid(
-        clock_texture,
-        Vec2::new(120., 300.),
-        1,
-        1,
-    ));
-    let _clock = commands
-        .spawn_bundle(SpriteSheetBundle {
-            texture_atlas: clock_atlas,
-            transform: Transform::from_xyz(-200., -72., 0.),
-            ..Default::default()
-        })
-        .insert(Interactable {
-            bounding_box: (Vec2::new(-60., -150.), Vec2::new(60., 150.)),
-            ..Default::default()
-        })
-        .insert(Clickable)
-        .insert(EvokesConcept(time))
-        .id();
-
-    // commands
-    //     .entity(entities[1])
-    //     .insert(ClearsConcepts).id();
-
-    // commands
-    //     .entity(entities[3])
-    //     .insert(EvokesConcept(time));
-
-    // spawn each entity
-    // commands
-    //     .spawn()
-    //     .insert_bundle((
-    //         Transform::default(),
-    //         GlobalTransform::default(),
-    //     ))
-    //     .push_children(&entities);
 }
 
 pub struct RoomPlugin;

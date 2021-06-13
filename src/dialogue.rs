@@ -1,8 +1,8 @@
 use bevy::prelude::{
     Commands, Plugin, AppBuilder, IntoSystem, TextBundle, Style, AlignSelf,
     PositionType, Rect, Val, Text, TextStyle, Color, TextAlignment,
-    HorizontalAlign, Res, AssetServer, Time, Query, With, UiCameraBundle,
-    Entity, EventWriter, Handle, AudioSource, Audio,
+    HorizontalAlign, VerticalAlign, Res, AssetServer, Time, Query, With, UiCameraBundle,
+    Entity, EventWriter, Handle, AudioSource, Audio, Size, AlignContent, AlignItems,
 };
 use crate::concepts::Evoked;
 use std::time::Duration;
@@ -20,6 +20,25 @@ pub struct Line {
     pub consumes_concepts: Vec<Entity>,
     pub requires_spoken: Vec<Entity>,
     pub conflicts_spoken: Vec<Entity>,
+}
+
+impl Default for Line {
+    fn default() -> Line {
+        Line {
+                text: "".to_string(),
+                priority: 0,
+                duration: Duration::from_secs(3),
+                audio: None,
+                repeatable: false,
+                responds_to_concepts: vec![],
+                groups: vec![],
+                animations: vec![],
+                requires_concepts: vec![],
+                consumes_concepts: vec![],
+                requires_spoken: vec![],
+                conflicts_spoken: vec![],
+        }
+    }
 }
 
 pub struct Spoken(Vec<Duration>);
@@ -166,36 +185,21 @@ fn dialogue_startup(
         .spawn_bundle(UiCameraBundle::default());
 
     commands
-        .spawn()
-        .insert(
-            Line {
-                text: "Hello world!".to_string(),
-                priority: 0,
-                duration: Duration::from_secs(3),
-                audio: None,
-                repeatable: true,
-                responds_to_concepts: vec![],
-                groups: vec![],
-                animations: vec![],
-                requires_concepts: vec![],
-                consumes_concepts: vec![],
-                requires_spoken: vec![],
-                conflicts_spoken: vec![],
-            }
-        )
-        .insert(
-            Spoken(vec![Duration::from_secs(1)])
-        );
-
-    commands
         .spawn_bundle(TextBundle {
             style: Style {
-                align_self: AlignSelf::FlexEnd,
+                align_self: AlignSelf::Center,
+                align_items: AlignItems::Center,
+                align_content: AlignContent::Center,
                 position_type: PositionType::Absolute,
                 position: Rect {
-                    bottom: Val::Px(5.0),
-                    right: Val::Px(15.0),
+                    top: Val::Px(3. * 5.0),
+                    left: Val::Px(3. * 15.0),
+                    right: Val::Px(3. * 15.0),
                     ..Default::default()
+                },
+                max_size: Size {
+                    width: Val::Px(3840. - 2. * 3. * 15.),
+                    height: Val::Px(3. * 200.0),
                 },
                 ..Default::default()
             },
@@ -208,8 +212,8 @@ fn dialogue_startup(
                 color: Color::WHITE,
             },
             alignment: TextAlignment {
-                horizontal: HorizontalAlign::Center,
-                ..Default::default()
+                horizontal: HorizontalAlign::Left,
+                vertical: VerticalAlign::Top,
             }
         });
 }
