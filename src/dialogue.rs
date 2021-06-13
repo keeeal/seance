@@ -2,10 +2,12 @@ use bevy::prelude::{
     Commands, Plugin, AppBuilder, IntoSystem, TextBundle, Style, AlignSelf,
     PositionType, Rect, Val, Text, TextStyle, Color, TextAlignment, info,
     HorizontalAlign, VerticalAlign, Res, AssetServer, Time, Query, With, UiCameraBundle,
-    Entity, EventWriter, Handle, AudioSource, Audio, Size, AlignContent, AlignItems,
+    Entity, EventWriter, Handle, Size, AlignContent, AlignItems,
 };
+use bevy_kira_audio::AudioSource;
 use crate::concepts::Evoked;
 use crate::question_display::{SetQuestionEvent, ClearQuestionEvent};
+use crate::audio::{PlayAudioEvent, StopAudioEvent, Channel};
 use std::time::Duration;
 
 pub struct Line {
@@ -13,6 +15,9 @@ pub struct Line {
     pub priority: i32,
     pub duration: Duration,
     pub audio: Option<Handle<AudioSource>>,
+    pub music: Option<Handle<AudioSource>>,
+    pub stop_audio: bool,
+    pub stop_music: bool,
     pub repeatable: bool,
     pub responds_to_concepts: Vec<Entity>,
     pub groups: Vec<Entity>,
@@ -36,6 +41,9 @@ impl Default for Line {
             priority: 0,
             duration: Duration::from_secs(3),
             audio: None,
+            music: None,
+            stop_audio: false,
+            stop_music: false,
             repeatable: false,
             responds_to_concepts: vec![],
             groups: vec![],
@@ -67,8 +75,9 @@ pub fn progress_dialogue(
     spoken_query: Query<&Spoken>,
     concept_query: Query<Entity, With<Evoked>>,
     time: Res<Time>,
-    audio: Res<Audio>,
     mut commands: Commands,
+    mut ev_play: EventWriter<PlayAudioEvent>,
+    mut ev_stop: EventWriter<StopAudioEvent>,
     mut start_event_writer: EventWriter<AnimationStartEvent>,
     mut end_event_writer: EventWriter<AnimationEndEvent>,
     mut clear_question_event_writer: EventWriter<ClearQuestionEvent>,
@@ -174,7 +183,16 @@ pub fn progress_dialogue(
 
         // Play audio
         if let Some(audio_handle) = &line.audio {
-            audio.play(audio_handle.clone());
+            ev_play.send(PlayAudioEvent { channel: Channel::Dialogue, handle: audio_handle.clone() } );
+        }
+        if let Some(music_handle) = &line.music {
+            ev_play.send(PlayAudioEvent { channel: Channel::Music, handle: music_handle.clone() } );
+        }
+        if line.stop_audio {
+            ev_stop.send(StopAudioEvent { channel: Channel::Dialogue } );
+        }
+        if line.stop_music {
+            ev_stop.send(StopAudioEvent { channel: Channel::Music } );
         }
 
         // Update groups

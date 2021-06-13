@@ -2,7 +2,7 @@ use bevy::prelude::{
     Plugin, Res, Transform, Input, MouseButton, AppBuilder,
     Entity, Vec3, Query, With, EventWriter, Time, IntoSystem,
 };
-use bevy_interact_2d::{InteractionPlugin, InteractionState,Group};
+use bevy_interact_2d::{InteractionPlugin, InteractionState};
 
 pub struct Clickable;
 
@@ -37,17 +37,10 @@ fn click(
         return;
     }
 
-    println!("CLICKED A THING");
-
-
-    for (group, things) in interaction_state.ordered_interact_list_map.iter() {
-        println!("GROUP");
+    for (_, things) in interaction_state.ordered_interact_list_map.iter() {
         for (e, _) in things {
-            println!("YEE");
             if let Ok(transform) = target_query.get(*e) {
-                println!("fldkjf");
                 if let Ok(mut moveable) = moveable_query.single_mut() {
-                    eprintln!("SETTING TARGET {}", e.id());
                     moveable.target = Some((*e, transform.translation))
                 }
                 break;

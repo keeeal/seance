@@ -1,5 +1,8 @@
 use bevy::prelude::{App, EventReader, WindowDescriptor, DefaultPlugins, IntoSystem};
 
+mod audio;
+use audio::AudioPlugin;
+
 mod concepts;
 use concepts::ConceptPlugin;
 
@@ -33,6 +36,7 @@ fn main() {
             ..Default::default()
         })
         .add_plugins(DefaultPlugins)
+        .add_plugin(AudioPlugin)
         .add_plugin(GhostPlugin)
         .add_plugin(ConceptPlugin)
         .add_plugin(DialoguePlugin)

@@ -344,7 +344,7 @@ pub fn startup(
                 priority: 5,
                 duration: Duration::from_secs(3),
                 starts_animations: vec!["narrator_talk".to_string()],
-                audio: Some(asset_server.load("BGM_SC1_Introduction.mp3")),
+                music: Some(asset_server.load("BGM_SC1_Introduction.mp3")),
                 ..Default::default()
             }
         )
@@ -406,7 +406,9 @@ pub fn startup(
         .insert(Line {
             text: "".to_string(),
             priority: 5,
+            stop_audio: true,
             duration: Duration::from_secs(5),
+            // music: Some(asset_server.load("Repeating_Piano_Theme.mp3")),
             requires_spoken: vec![s1_introduction_c],
             ..Default::default()
         })
@@ -633,6 +635,26 @@ pub fn startup(
         )
         .id();
 
+    let s1_narrator_a3_a = commands
+        .spawn()
+        .insert(
+            Line {
+                text: concat!(
+                    "Narrator: As one of your daughters opens the lid, music begins to ",
+                    "play. The girls grimace but your wife smiles and a tear rolls down ",
+                    "her face. She has heard this song before.",
+                ).to_string(),
+                priority: 5,
+                duration: Duration::from_secs(6),
+                starts_animations: vec!["narrator_talk".to_string()],
+                requires_spoken: vec![s1_q3_pause],
+                requires_concepts: vec![music_box],
+                audio: Some(asset_server.load("dialogue/NAR.S1.Q3.2.mp3")),
+                ..Default::default()
+            }
+        )
+        .id();
+
     let s1_narrator_a3 = commands
         .spawn()
         .insert(
@@ -643,12 +665,10 @@ pub fn startup(
                     "her face. She has heard this song before.",
                 ).to_string(),
                 priority: 5,
-                duration: Duration::from_secs(17),
-                animations: vec!["narrator_talk".to_string()],
-                starts_animations: vec!["music_box".to_string()],
-                requires_spoken: vec![s1_q3_pause],
-                requires_concepts: vec![music_box],
-                audio: Some(asset_server.load("dialogue/NAR.S1.Q3.2.mp3")),
+                duration: Duration::from_secs(11),
+                ends_animations: vec!["narrator_talk".to_string()],
+                music: Some(asset_server.load("Music_Box_Sound.mp3")),
+                requires_spoken: vec![s1_narrator_a3_a],
                 ..Default::default()
             }
         )
@@ -660,6 +680,7 @@ pub fn startup(
             Line {
                 text: "Margaret: It’s really him. I used to sing this... Sniff *Looks down and tears*".to_string(),
                 priority: 5,
+                stop_audio: true,
                 duration: Duration::from_secs(4),
                 animations: vec!["mother_talk".to_string()],
                 requires_spoken: vec![s1_narrator_a3],
@@ -745,6 +766,7 @@ pub fn startup(
                 text: "Jasmine: Ok what was Melina’s favourite toy?".to_string(),
                 priority: 5,
                 question: Some("What was Melina’s favourite toy?".to_string()),
+                music: Some(asset_server.load("Repeating_Piano_Theme.mp3")),
                 duration: Duration::from_secs(6),
                 animations: vec!["twin1_talk".to_string()],
                 requires_spoken: vec![s1_melina_a3_b],
