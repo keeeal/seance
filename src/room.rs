@@ -1,10 +1,9 @@
 use crate::concepts::{Concept, EvokesConcept};
 use crate::ghost::{ghost_bundle, Clickable};
-use crate::animation::{animation_bundle, AnimationDefinition, TALK_ANIMATION};
-use rand::Rng;
+use crate::animation::{animation_bundle, TALK_ANIMATION, BLINK_ANIMATION};
 use bevy::prelude::{
     AppBuilder, AssetServer, Assets, Commands, IntoSystem, OrthographicCameraBundle, Plugin, Res,
-    ResMut, SpriteSheetBundle, TextureAtlas, Transform, Vec2,
+    ResMut, SpriteSheetBundle, TextureAtlas, Transform, Vec2, Vec3
 };
 use bevy_interact_2d::{Interactable, InteractionSource};
 
@@ -42,17 +41,9 @@ pub fn startup(
         3,
         3,
     ));
-
-    let medium_idle = AnimationDefinition::WithState(|state| match state {
-        0 => {
-            let mut rng = rand::thread_rng();
-            (5, rng.gen_range(16..32))
-        }
-        1 => (4, 0),
-        i => (3, i-1)
-    });
     
     let medium_talk_frames = vec![0,1,2];
+    let medium_blink_frames = vec![3,4,5];
 
     let _medium = commands
         .spawn_bundle(SpriteSheetBundle {
@@ -62,6 +53,75 @@ pub fn startup(
         })
         .insert_bundle(animation_bundle(TALK_ANIMATION, medium_talk_frames))
         .id();
+
+    // load mother
+    let mother_texture = asset_server.load("characters/mother.png");
+    let mother_atlas = texture_atlases.add(TextureAtlas::from_grid(
+        mother_texture,
+        Vec2::new(320.0, 505.0),
+        3,
+        4,
+    ));
+    
+    let mother_default_frames = vec![0,1,2];
+    let mother_happy_frames = vec![3,4,5];
+    let mother_scared_frames = vec![6,7,8];
+    let mother_talk_frames = vec![9,10,11];
+
+    let _mother = commands
+        .spawn_bundle(SpriteSheetBundle {
+            texture_atlas: mother_atlas,
+            transform: Transform::from_xyz(-422., -833., 0.),
+            ..Default::default()
+        })
+        .insert_bundle(animation_bundle(BLINK_ANIMATION, mother_happy_frames))
+        .id();
+
+    // load twin1
+    let twin1_texture = asset_server.load("characters/twin1.png");
+    let twin1_atlas = texture_atlases.add(TextureAtlas::from_grid(
+        twin1_texture,
+        Vec2::new(320.0, 640.0),
+        3,
+        4,
+    ));
+    
+    let twin1_default_frames = vec![0,1,2];
+    let twin1_happy_frames = vec![3,4,5];
+    let twin1_scared_frames = vec![6,7,8];
+    let twin1_talk_frames = vec![9,10,11];
+
+    let _twin1 = commands
+        .spawn_bundle(SpriteSheetBundle {
+            texture_atlas: twin1_atlas,
+            transform: Transform::from_xyz(-201., -770., 0.),
+            ..Default::default()
+        })
+        .insert_bundle(animation_bundle(BLINK_ANIMATION, twin1_default_frames))
+        .id();
+        
+    // load twin2
+    let twin2_texture = asset_server.load("characters/twin2.png");
+    let twin2_atlas = texture_atlases.add(TextureAtlas::from_grid(
+        twin2_texture,
+        Vec2::new(320.0, 640.0),
+        3,
+        4,
+    ));
+    
+    let twin2_default_frames = vec![0,1,2];
+    let twin2_happy_frames = vec![3,4,5];
+    let twin2_scared_frames = vec![6,7,8];
+    let twin2_talk_frames = vec![9,10,11];
+    let _twin2 = commands
+        .spawn_bundle(SpriteSheetBundle {
+            texture_atlas: twin2_atlas,
+            transform: Transform::from_xyz(287., -779., 0.),
+            ..Default::default()
+        })
+        .insert_bundle(animation_bundle(BLINK_ANIMATION, twin2_happy_frames))
+        .id();
+
 
     // load ghost
     let ghost_texture = asset_server.load("ghost.png");
