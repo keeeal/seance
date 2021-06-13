@@ -128,6 +128,10 @@ pub fn startup(
                     "mother_talk".to_string(),
                     (TALK_ANIMATION, mother_talk_frames),
                 ),
+                (
+                    "mother_leave".to_string(),
+                    (AnimationDefinition::Simple, mother_leave_frames),
+                ),
             ]
             .iter()
             .cloned()
@@ -169,6 +173,10 @@ pub fn startup(
                 (
                     "twin1_talk".to_string(),
                     (TALK_ANIMATION, twin1_talk_frames),
+                ),
+                (
+                    "twin1_leave".to_string(),
+                    (AnimationDefinition::Simple, twin1_leave_frames),
                 ),
             ]
             .iter()
@@ -212,6 +220,11 @@ pub fn startup(
                     "twin2_talk".to_string(),
                     (TALK_ANIMATION, twin2_talk_frames),
                 ),
+                (
+                    "twin2_leave".to_string(),
+                    (AnimationDefinition::Simple, twin2_leave_frames),
+                ),
+
             ]
             .iter()
             .cloned()
@@ -330,6 +343,7 @@ pub fn startup(
                 text: "".to_string(),
                 priority: 5,
                 duration: Duration::from_secs(3),
+                starts_animations: vec!["narrator_talk".to_string()],
                 audio: Some(asset_server.load("BGM_SC1_Introduction.mp3")),
                 ..Default::default()
             }
@@ -350,7 +364,6 @@ pub fn startup(
                 ).to_string(),
                 priority: 5,
                 duration: Duration::from_secs(40),
-                starts_animations: vec!["narrator_talk".to_string()],
                 requires_spoken: vec![s1_pause],
                 audio: Some(asset_server.load("dialogue/NAR.S1.Introduction.mp3")),
                 ..Default::default()
@@ -953,7 +966,7 @@ pub fn startup(
         )
         .id();
 
-    let s1_end = commands
+    let _s1_end = commands
         .spawn()
         .insert(
             Line {

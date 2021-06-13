@@ -238,14 +238,14 @@ fn dialogue_startup(
                 align_content: AlignContent::Center,
                 position_type: PositionType::Absolute,
                 position: Rect {
-                    bottom: Val::Px(3. * 5.0),
-                    left: Val::Px(3. * 15.0),
-                    right: Val::Px(3. * 15.0),
+                    bottom: Val::Px(5.0),
+                    left: Val::Px(15.0),
+                    right: Val::Px(15.0),
                     ..Default::default()
                 },
                 max_size: Size {
-                    width: Val::Px(3840. - 2. * 3. * 15.),
-                    height: Val::Px(3. * 200.0),
+                    width: Val::Px(1280. - 2. * 15.),
+                    height: Val::Px(200.0),
                 },
                 ..Default::default()
             },
