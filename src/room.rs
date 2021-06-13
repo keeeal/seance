@@ -1,11 +1,11 @@
 use crate::concepts::{Concept, EvokesConcept};
 use crate::ghost::{ghost_bundle, Clickable};
-use crate::animation::{animation_bundle, TALK_ANIMATION, BLINK_ANIMATION};
+use crate::animation::{animation_bundle, AnimationDefinition, TALK_ANIMATION, BLINK_ANIMATION};
 use crate::dialogue::{Line};
 use rand::Rng;
 use bevy::prelude::{
     AppBuilder, AssetServer, Assets, Commands, IntoSystem, OrthographicCameraBundle, Plugin, Res,
-    ResMut, SpriteSheetBundle, TextureAtlas, Transform, Vec2, Vec3
+    ResMut, SpriteSheetBundle, TextureAtlas, Transform, Vec2, Vec3, Visible,
 };
 use bevy_interact_2d::{Interactable, InteractionSource};
 use std::time::Duration;
@@ -53,7 +53,10 @@ pub fn startup(
             transform: Transform::from_xyz(20., -760., 0.),
             ..Default::default()
         })
-        .insert_bundle(animation_bundle(TALK_ANIMATION, medium_talk_frames))
+        .insert_bundle(animation_bundle(
+            (BLINK_ANIMATION, medium_blink_frames),
+            [("medium_talk".to_string(), (TALK_ANIMATION, medium_talk_frames))].iter().cloned().collect(),
+        ))
         .id();
 
     // load mother
@@ -75,7 +78,12 @@ pub fn startup(
             transform: Transform::from_xyz(-422., -833., 0.),
             ..Default::default()
         })
-        .insert_bundle(animation_bundle(BLINK_ANIMATION, mother_happy_frames))
+        .insert_bundle(animation_bundle(
+            (BLINK_ANIMATION, mother_default_frames),
+            [("mother_happy".to_string(), (BLINK_ANIMATION, mother_happy_frames)),
+             ("mother_scared".to_string(), (BLINK_ANIMATION, mother_scared_frames)),
+             ("mother_talk".to_string(), (TALK_ANIMATION, mother_talk_frames))].iter().cloned().collect(),
+        ))
         .id();
 
     // load twin1
@@ -97,7 +105,12 @@ pub fn startup(
             transform: Transform::from_xyz(-201., -770., 0.),
             ..Default::default()
         })
-        .insert_bundle(animation_bundle(BLINK_ANIMATION, twin1_default_frames))
+        .insert_bundle(animation_bundle(
+            (BLINK_ANIMATION, twin1_default_frames),
+            [("twin1_happy".to_string(), (BLINK_ANIMATION, twin1_happy_frames)),
+             ("twin1_scared".to_string(), (BLINK_ANIMATION, twin1_scared_frames)),
+             ("twin1_talk".to_string(), (TALK_ANIMATION, twin1_talk_frames))].iter().cloned().collect(),
+        ))
         .id();
 
     // load twin2
@@ -119,7 +132,12 @@ pub fn startup(
             transform: Transform::from_xyz(287., -779., 0.),
             ..Default::default()
         })
-        .insert_bundle(animation_bundle(BLINK_ANIMATION, twin2_happy_frames))
+        .insert_bundle(animation_bundle(
+            (BLINK_ANIMATION, twin2_default_frames),
+            [("twin2_happy".to_string(), (BLINK_ANIMATION, twin2_happy_frames)),
+             ("twin2_scared".to_string(), (BLINK_ANIMATION, twin2_scared_frames)),
+             ("twin2_talk".to_string(), (TALK_ANIMATION, twin2_talk_frames))].iter().cloned().collect(),
+        ))
         .id();
 
     // load ghost
@@ -140,6 +158,32 @@ pub fn startup(
         .insert_bundle(ghost_bundle())
         .id();
 
+    // load narrator overlay
+    let overlay_texture = asset_server.load("blackScreen.png");
+    let overlay_atlas = texture_atlases.add(TextureAtlas::from_grid(
+        overlay_texture,
+        Vec2::new(1920., 1280.),
+        2,
+        1,
+    ));
+
+    let vignette_frames = vec![1];
+    let narrator_frames = vec![0];
+    let _overlay = commands
+        .spawn_bundle(SpriteSheetBundle {
+            texture_atlas: overlay_atlas,
+            transform: (
+                Transform::from_xyz(0., 0., 10.)
+                * Transform::from_scale(Vec3::new(3., 3., 3.))
+            ),
+            ..Default::default()
+        })
+        .insert_bundle(animation_bundle(
+            (AnimationDefinition::Simple, vignette_frames),
+            [("narrator_talk".to_string(), (AnimationDefinition::Simple, narrator_frames))].iter().cloned().collect(),
+        ))
+        .id();
+
     let s1_pause = commands
         .spawn()
         .insert(
@@ -157,7 +201,7 @@ pub fn startup(
         .insert(
             Line {
                 text: concat!(
-                    "The world is cold and dark as you wander the halls of a home you used ",
+                    "Narrator: The world is cold and dark as you wander the halls of a home you used ",
                     "to find great comfort in. Your desire to leave it all behind is ",
                     "palpable but still something keeps you here. The presence of the ones ",
                     "you love. You see your daughters crying and your wife sitting quietly ",
@@ -166,6 +210,7 @@ pub fn startup(
                 ).to_string(),
                 priority: 5,
                 duration: Duration::from_secs(40),
+                starts_animations: vec!["narrator_talk".to_string()],
                 audio: Some(asset_server.load("dialogue/NAR.S1.Introduction.mp3")),
                 ..Default::default()
             }
@@ -176,7 +221,7 @@ pub fn startup(
         .insert(
             Line {
                 text: concat!(
-                    "Unconnected to the passage of time you watch strange happenings scare ",
+                    "Narrator: Unconnected to the passage of time you watch strange happenings scare ",
                     "your family. Are you responsible? Why can’t you leave?",
                 ).to_string(),
                 priority: 5,
@@ -191,13 +236,77 @@ pub fn startup(
         .insert(
             Line {
                 text: concat!(
-                    "Suddenly, a warm light draws you to your living room. Your family is ",
+                    "Narrator: Suddenly, a warm light draws you to your living room. Your family is ",
                     "congregated around the dining table with an old friend, a medium, ",
                     "Madam Gretchen. A seat sits empty beckoning you into the circle.",
                 ).to_string(),
                 priority: 5,
-                duration: Duration::from_secs(25),
+                duration: Duration::from_secs(19),
+                ends_animations: vec!["narrator_talk".to_string()],
                 requires_spoken: vec![s1_introduction_b],
+                ..Default::default()
+            }
+        )
+        .id();
+
+    let s1_introduction_pause = commands
+        .spawn()
+        .insert(
+            Line {
+                text: "".to_string(),
+                priority: 5,
+                duration: Duration::from_secs(5),
+                requires_spoken: vec![s1_introduction_c],
+                ..Default::default()
+            }
+        )
+        .id();
+
+    let s1_medium_q1_a = commands
+        .spawn()
+        .insert(
+            Line {
+                text: concat!(
+                    "Madam Gretchen: As we join hands we focus our wills, Joining together the worlds of ",
+                    "the dead and the living. We are reaching out to whoever haunts this ",
+                    "place.",
+                ).to_string(),
+                priority: 5,
+                duration: Duration::from_secs(13),
+                starts_animations: vec!["medium_talk".to_string()],
+                requires_spoken: vec![s1_introduction_pause],
+                ..Default::default()
+            }
+        )
+        .id();
+    let s1_medium_q1_b = commands
+        .spawn()
+        .insert(
+            Line {
+                text: concat!(
+                    "Madam Gretchen: Is someone here? If there is someone with us, give us a sign?",
+                ).to_string(),
+                priority: 5,
+                duration: Duration::from_secs(9),
+                ends_animations: vec!["medium_talk".to_string()],
+                requires_spoken: vec![s1_medium_q1_a],
+                ..Default::default()
+            }
+        )
+        .id();
+
+    let s1_narrator_q1_a = commands
+        .spawn()
+        .insert(
+            Line {
+                text: concat!(
+                    "Narrator: The question coupled by the warm light strengthens your resolve.",
+                ).to_string(),
+                priority: 5,
+                duration: Duration::from_secs(6),
+                requires_spoken: vec![s1_medium_q1_b],
+                animations: vec!["narrator_talk".to_string()],
+                audio: Some(asset_server.load("dialogue/NAR.S1.Q1.mp3")),
                 ..Default::default()
             }
         )

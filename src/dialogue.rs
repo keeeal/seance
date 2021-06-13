@@ -1,6 +1,6 @@
 use bevy::prelude::{
     Commands, Plugin, AppBuilder, IntoSystem, TextBundle, Style, AlignSelf,
-    PositionType, Rect, Val, Text, TextStyle, Color, TextAlignment,
+    PositionType, Rect, Val, Text, TextStyle, Color, TextAlignment, info,
     HorizontalAlign, VerticalAlign, Res, AssetServer, Time, Query, With, UiCameraBundle,
     Entity, EventWriter, Handle, AudioSource, Audio, Size, AlignContent, AlignItems,
 };
@@ -16,6 +16,8 @@ pub struct Line {
     pub responds_to_concepts: Vec<Entity>,
     pub groups: Vec<Entity>,
     pub animations: Vec<String>,
+    pub starts_animations: Vec<String>,
+    pub ends_animations: Vec<String>,
     pub requires_concepts: Vec<Entity>,
     pub consumes_concepts: Vec<Entity>,
     pub requires_spoken: Vec<Entity>,
@@ -33,6 +35,8 @@ impl Default for Line {
                 responds_to_concepts: vec![],
                 groups: vec![],
                 animations: vec![],
+                starts_animations: vec![],
+                ends_animations: vec![],
                 requires_concepts: vec![],
                 consumes_concepts: vec![],
                 requires_spoken: vec![],
@@ -45,8 +49,8 @@ pub struct Spoken(Vec<Duration>);
 
 pub struct Speaking;
 
-pub struct AnimationStartEvent(String);
-pub struct AnimationEndEvent(String);
+pub struct AnimationStartEvent(pub String);
+pub struct AnimationEndEvent(pub String);
 
 pub fn progress_dialogue(
     speaking_query: Query<(Entity, &Line, &Spoken), With<Speaking>>,
@@ -69,6 +73,11 @@ pub fn progress_dialogue(
 
                 // End animations
                 for animation in &line.animations {
+                    info!("End {}", animation);
+                    end_event_writer.send(AnimationEndEvent(animation.clone()));
+                }
+                for animation in &line.ends_animations {
+                    info!("End {}", animation);
                     end_event_writer.send(AnimationEndEvent(animation.clone()));
                 }
             }
@@ -164,6 +173,11 @@ pub fn progress_dialogue(
 
         // Start animations
         for animation in &line.animations {
+            info!("Start {}", animation);
+            start_event_writer.send(AnimationStartEvent(animation.clone()));
+        }
+        for animation in &line.starts_animations {
+            info!("Start {}", animation);
             start_event_writer.send(AnimationStartEvent(animation.clone()));
         }
 

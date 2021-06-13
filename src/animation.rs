@@ -1,6 +1,12 @@
-use bevy::prelude::{AppBuilder, IntoSystem, Plugin, Query, Res, TextureAtlasSprite, Time, Timer};
+use bevy::prelude::{
+    AppBuilder, IntoSystem, Plugin, Query, Res, TextureAtlasSprite, Time, Timer, Commands,
+    Entity, EventReader,
+};
+use crate::dialogue::{AnimationStartEvent, AnimationEndEvent};
 use rand::Rng;
+use std::collections::HashMap;
 
+#[derive(Clone)]
 pub enum AnimationDefinition {
     Simple,
     Progression(fn(usize) -> usize),
@@ -38,21 +44,74 @@ pub const TALK_ANIMATION: AnimationDefinition =
         i => (2, i-3)
     });
 
+pub struct Transitions {
+    default: (AnimationDefinition, Vec<u32>),
+    animations: HashMap<String, (AnimationDefinition, Vec<u32>)>,
+    current: Option<String>,
+}
+
 pub struct Animation {
     definition: AnimationDefinition,
     frames: Vec<u32>,
     state: usize,
 }
 
-pub fn animation_bundle(definition: AnimationDefinition, frames: Vec<u32>) -> (Animation, Timer) {
+pub fn animation_bundle(default: (AnimationDefinition, Vec<u32>),
+                        animations: HashMap<String, (AnimationDefinition, Vec<u32>)>) -> (Transitions, Animation, Timer) {
     (
+        Transitions {
+            default: default.clone(),
+            animations,
+            current: None,
+        },
         Animation {
-            definition,
-            frames, 
+            definition: default.0,
+            frames: default.1,
             state: 0,
         },
         Timer::from_seconds(0.2, true),
     )
+}
+
+fn handle_animation_transitions(
+    mut transition_query: Query<(Entity, &mut Transitions)>,
+    mut ev_start: EventReader<AnimationStartEvent>,
+    mut ev_end: EventReader<AnimationEndEvent>,
+    mut commands: Commands,
+) {
+    for AnimationStartEvent ( label ) in ev_start.iter() {
+        for (entity, mut transitions) in transition_query.iter_mut() {
+            if transitions.current == Some(label.clone()) {
+                continue;
+            }
+            if let Some((definition, frames)) = transitions.animations.get(label) {
+                commands
+                    .entity(entity)
+                    .insert(Animation {
+                        definition: definition.clone(),
+                        frames: frames.clone(),
+                        state: 0,
+                    });
+
+                transitions.current = Some(label.clone());
+            }
+        }
+    }
+    for AnimationEndEvent ( label ) in ev_end.iter() {
+        for (entity, mut transitions) in transition_query.iter_mut() {
+            if transitions.current == Some(label.clone()) {
+                commands
+                    .entity(entity)
+                    .insert(Animation {
+                        definition: transitions.default.0.clone(),
+                        frames: transitions.default.1.clone(),
+                        state: 0,
+                    });
+
+                transitions.current = None;
+            }
+        }
+    }
 }
 
 fn animate_sprite_system(
@@ -86,6 +145,8 @@ pub struct AnimationPlugin;
 
 impl Plugin for AnimationPlugin {
     fn build(&self, app: &mut AppBuilder) {
-        app.add_system(animate_sprite_system.system());
+        app
+            .add_system(animate_sprite_system.system())
+            .add_system(handle_animation_transitions.system());
     }
 }
