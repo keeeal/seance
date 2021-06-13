@@ -11,7 +11,7 @@ pub struct Concept {
     pub parents: Vec<HashSet<Entity>>,
 }
 
-pub struct Evoked(Duration);
+pub struct Evoked(pub Duration);
 
 pub struct EvokesConcept(pub Entity);
 pub struct ClearsConcepts;
