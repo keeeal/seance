@@ -23,6 +23,8 @@ pub struct Line {
     pub ends_animations: Vec<String>,
     pub requires_concepts: Vec<Entity>,
     pub consumes_concepts: Vec<Entity>,
+    pub requires_any_concept: bool,
+    pub consumes_all_concepts: bool,
     pub requires_spoken: Vec<Entity>,
     pub conflicts_spoken: Vec<Entity>,
 }
@@ -44,6 +46,8 @@ impl Default for Line {
             ends_animations: vec![],
             requires_concepts: vec![],
             consumes_concepts: vec![],
+            requires_any_concept: false,
+            consumes_all_concepts: false,
             requires_spoken: vec![],
             conflicts_spoken: vec![],
         }
@@ -111,6 +115,12 @@ pub fn progress_dialogue(
             for concept in &line.responds_to_concepts {
                 if let Err(_) = concept_query.get(*concept) {
                     return false;
+                }
+            }
+
+            if line.requires_any_concept {
+                if let None = concept_query.iter().next() {
+                    return false
                 }
             }
 
@@ -201,6 +211,13 @@ pub fn progress_dialogue(
             commands
                 .entity(*concept)
                 .remove::<Evoked>();
+        }
+        if line.consumes_all_concepts {
+            for concept in concept_query.iter() {
+                commands
+                    .entity(concept)
+                    .remove::<Evoked>();
+            }
         }
     }
 
