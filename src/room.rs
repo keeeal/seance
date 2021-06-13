@@ -220,6 +220,7 @@ pub fn startup(
                 text: "".to_string(),
                 priority: 5,
                 duration: Duration::from_secs(3),
+                audio: Some(asset_server.load("BGM_SC1_Introduction.mp3")),
                 ..Default::default()
             }
         )
