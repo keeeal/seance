@@ -48,7 +48,7 @@ pub fn startup(
         })
         .id();
 
-    let music_box = commands
+    let music_box_concept = commands
         .spawn()
         .insert(Concept{
             description: "Jewellery Box".to_string(),
@@ -56,7 +56,7 @@ pub fn startup(
         })
         .id();
 
-    let rocking_horse = commands
+    let rocking_horse_concept = commands
         .spawn()
         .insert(Concept{
             description: "Rocking Horse".to_string(),
@@ -290,7 +290,7 @@ pub fn startup(
         })
         .insert(Clickable)
         .id();
-        
+
     let _frame3 = commands
         .spawn_bundle(SpriteSheetBundle {
             texture_atlas: frame_atlas_id.clone(),
@@ -302,7 +302,58 @@ pub fn startup(
             groups: vec![click_group],
         })
         .insert(Clickable)
+        .insert(EvokesConcept(norman_concept))
         .id();
+
+    // frame
+    let mut musicbox_atlas =
+        TextureAtlas::new_empty(stationary_textures.clone(), Vec2::new(960., 960.));
+    musicbox_atlas.add_texture(Rect {
+        min: Vec2::new(9., 13.) * 24.,
+        max: Vec2::new(14., 18.) * 24.,
+    });
+    musicbox_atlas.add_texture(Rect {
+        min: Vec2::new(14., 13.) * 24.,
+        max: Vec2::new(19., 18.) * 24.,
+    });
+    let musicbox_atlas_id = texture_atlases.add(musicbox_atlas);
+
+    let _music_box = commands
+        .spawn_bundle(SpriteSheetBundle {
+            texture_atlas: musicbox_atlas_id.clone(),
+            transform: (Transform::from_xyz(1292., -444., 0.) * Transform::from_scale(Vec3::new(2., 2., 2.))),
+            ..Default::default()
+        })
+        .insert(Interactable {
+            bounding_box: (Vec2::new(-1.5 * 24., -1.5 * 24.), Vec2::new(1.6 * 24., 1.7 * 24.)),
+            groups: vec![click_group],
+        })
+        .insert(Clickable)
+        .insert(EvokesConcept(music_box_concept))
+        .id();
+
+    let rockinghorse_texture = asset_server.load("objects/rocking_horse.png");
+    let rockinghorse_atlas = texture_atlases.add(TextureAtlas::from_grid(
+        rockinghorse_texture,
+        Vec2::new(238., 250.),
+        3,
+        2,
+    ));
+
+    let _rocking_horse = commands
+        .spawn_bundle(SpriteSheetBundle {
+            texture_atlas: rockinghorse_atlas,
+            transform: (Transform::from_xyz(828., -612., 0.) * Transform::from_scale(Vec3::new(1., 1., 1.))),
+            ..Default::default()
+        })
+        .insert(Interactable {
+            bounding_box: (Vec2::new(-119., -125.), Vec2::new(119., 125.)),
+            groups: vec![click_group],
+        })
+        .insert(Clickable)
+        .insert(EvokesConcept(rocking_horse_concept))
+        .id();
+
 
     // load narrator overlay
     let overlay_texture = asset_server.load("blackScreen.png");
@@ -384,6 +435,7 @@ pub fn startup(
             ..Default::default()
         })
         .id();
+
     let s1_introduction_c = commands
         .spawn()
         .insert(Line {
@@ -640,15 +692,17 @@ pub fn startup(
         .insert(
             Line {
                 text: concat!(
-                    "Narrator: As one of your daughters opens the lid, music begins to ",
+                    "Narrator: As one of your daughters opens the lid, music starts to ",
                     "play. The girls grimace but your wife smiles and a tear rolls down ",
                     "her face. She has heard this song before.",
                 ).to_string(),
                 priority: 5,
-                duration: Duration::from_secs(6),
+                duration: Duration::from_secs(4),
+                clear_question: true,
                 starts_animations: vec!["narrator_talk".to_string()],
                 requires_spoken: vec![s1_q3_pause],
-                requires_concepts: vec![music_box],
+                requires_concepts: vec![music_box_concept],
+                consumes_concepts: vec![music_box_concept],
                 audio: Some(asset_server.load("dialogue/NAR.S1.Q3.2.mp3")),
                 ..Default::default()
             }
@@ -665,7 +719,7 @@ pub fn startup(
                     "her face. She has heard this song before.",
                 ).to_string(),
                 priority: 5,
-                duration: Duration::from_secs(11),
+                duration: Duration::from_secs(13),
                 ends_animations: vec!["narrator_talk".to_string()],
                 music: Some(asset_server.load("Music_Box_Sound.mp3")),
                 requires_spoken: vec![s1_narrator_a3_a],
@@ -807,8 +861,8 @@ pub fn startup(
                 question: Some("Why are you scaring us?".to_string()),
                 duration: Duration::from_secs(4),
                 animations: vec!["twin2_talk".to_string()],
-                requires_concepts: vec![rocking_horse],
-                consumes_concepts: vec![rocking_horse],
+                requires_concepts: vec![rocking_horse_concept],
+                consumes_concepts: vec![rocking_horse_concept],
                 requires_spoken: vec![s1_narrator_q4],
                 ..Default::default()
             }
