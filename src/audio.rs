@@ -61,7 +61,7 @@ fn events(
 ) {
     for PlayAudioEvent { channel, handle } in ev_play.iter() {
         match channel {
-            Channel::Music => audio.play_in_channel(handle.clone(), &music_channel),
+            Channel::Music => audio.play_looped_in_channel(handle.clone(), &music_channel),
             Channel::Dialogue => audio.play_in_channel(handle.clone(), &dialogue_channel),
         }
     }
