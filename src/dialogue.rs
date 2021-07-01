@@ -2,13 +2,184 @@ use bevy::prelude::{
     Commands, Plugin, AppBuilder, IntoSystem, TextBundle, Style, AlignSelf,
     PositionType, Rect, Val, Text, TextStyle, Color, TextAlignment, info,
     HorizontalAlign, VerticalAlign, Res, AssetServer, Time, Query, With, UiCameraBundle,
-    Entity, EventWriter, Handle, Size, AlignContent, AlignItems,
+    Entity, EventWriter, Handle, Size, AlignContent, AlignItems, Bundle,
 };
 use bevy_kira_audio::AudioSource;
 use crate::concepts::Evoked;
 use crate::question_display::{SetQuestionEvent, ClearQuestionEvent};
 use crate::audio::{PlayAudioEvent, StopAudioEvent, Channel};
 use std::time::Duration;
+use std::ops::Deref;
+
+#[must_use]
+pub struct NodeStub<T>{
+    node: T,
+    next: Entity,
+}
+
+#[must_use]
+pub struct NodeBuilder<'a, T>{
+    node: T,
+    next: Entity,
+    commands: &'a mut Commands<'a>,
+}
+
+pub trait NodePart<Builder> {
+    type Return;
+
+    fn add_to(self, builder: Builder) -> Self::Return;
+}
+
+impl<T> NodeStub<T> {
+    pub fn new(commands: &mut Commands) -> (NodeStub<T>, T)
+    where T: From<Entity> + Copy {
+        let next = commands.spawn().id();
+        let node = T::from(next);
+        (
+            NodeStub {
+                node,
+                next,
+            },
+            node,
+        )
+    }
+
+    pub fn with_commands<'a>(self, commands: &'a mut Commands<'a>) -> NodeBuilder<'a, T> {
+        NodeBuilder {
+            node: self.node,
+            next: self.next,
+            commands,
+        }
+    }
+}
+
+impl<'a, T> NodeBuilder<'a, T> {
+    pub fn add<P>(self, part: P) -> P::Return
+    where P: NodePart<NodeBuilder<'a, T>> {
+        part.add_to(self)
+    }
+}
+
+//TODO: implement
+#[derive(Bundle)]
+struct LineBundle{
+    line: Line,
+}
+
+struct NextLine(Entity);
+
+impl<'a, T> NodePart<NodeBuilder<'a, T>> for LineBundle {
+    type Return = NodeBuilder<'a, T>;
+
+    fn add_to(self, builder: NodeBuilder<'a, T>) -> NodeBuilder<'a, T> {
+        let next = builder.commands.spawn().id();
+        builder.commands
+            .entity(builder.next)
+            .insert_bundle(self)
+            .insert(NextLine(next));
+
+        NodeBuilder{
+            next,
+            ..builder
+        }
+    }
+}
+
+//TODO: implement
+struct JumpChoice;
+struct TunnelChoice;
+
+impl JumpChoice {
+    fn bundle(self) -> () {
+        ()
+    }
+}
+
+impl TunnelChoice {
+    fn bundle(self, next: Entity) -> () {
+        ()
+    }
+}
+
+impl<'a, T> NodePart<NodeBuilder<'a, T>> for TunnelChoice {
+    type Return = NodeBuilder<'a, T>;
+
+    fn add_to(self, builder: NodeBuilder<'a, T>) -> NodeBuilder<'a, T> {
+        let next = builder.commands.spawn().id();
+        builder.commands
+            .entity(builder.next)
+            .insert_bundle(self.bundle(next));
+
+        NodeBuilder{
+            next,
+            ..builder
+        }
+    }
+}
+
+impl<'a> NodePart<NodeBuilder<'a, TreeNode>> for JumpChoice {
+    type Return = ();
+
+    fn add_to(self, builder: NodeBuilder<'a, TreeNode>) -> () {
+        builder.commands
+            .entity(builder.next)
+            .insert_bundle(self.bundle());
+    }
+}
+
+struct Return;
+
+impl<'a> NodeBuilder<'a, TunnelNode> {
+    pub fn tunnel_return(self) -> () {
+        self.commands
+            .entity(self.next)
+            .insert(Return);
+    }
+}
+
+struct GameOver;
+
+impl<'a> NodeBuilder<'a, TreeNode> {
+    pub fn game_over(self) -> () {
+        self.commands
+            .entity(self.next)
+            .insert(GameOver);
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct TreeNode(Entity);
+
+impl Deref for TreeNode {
+    type Target = Entity;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<Entity> for TreeNode {
+    fn from(entity: Entity) -> Self {
+        TreeNode(entity)
+    }
+}
+
+#[derive(Copy, Clone)]
+pub struct TunnelNode(Entity);
+
+impl Deref for TunnelNode {
+    type Target = Entity;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<Entity> for TunnelNode {
+    fn from(entity: Entity) -> Self {
+        TunnelNode(entity)
+    }
+}
 
 pub struct Line {
     pub text: String,
