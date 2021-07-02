@@ -5,75 +5,106 @@ use bevy::prelude::{
     Entity, EventWriter, Handle, Size, AlignContent, AlignItems, Bundle,
 };
 use bevy_kira_audio::AudioSource;
-use crate::concepts::Evoked;
+use crate::concepts::{Evoked, ConceptFilter};
 use crate::question_display::{SetQuestionEvent, ClearQuestionEvent};
 use crate::audio::{PlayAudioEvent, StopAudioEvent, Channel};
 use std::time::Duration;
 use std::ops::Deref;
 
 #[must_use]
-pub struct NodeStub<T>{
+pub struct NodeBuilder<T>{
     node: T,
     next: Entity,
-}
-
-#[must_use]
-pub struct NodeBuilder<'a, T>{
-    node: T,
-    next: Entity,
-    commands: &'a mut Commands<'a>,
 }
 
 pub trait NodePart<Builder> {
     type Return;
 
-    fn add_to(self, builder: Builder) -> Self::Return;
+    fn add_to(self, builder: Builder, commands: &mut Commands) -> Self::Return;
 }
 
-impl<T> NodeStub<T> {
-    pub fn new(commands: &mut Commands) -> (NodeStub<T>, T)
+pub fn new_node<T>(commands: &mut Commands) -> (NodeBuilder<T>, T)
+where T: From<Entity> + Copy {
+    let next = commands.spawn().id();
+    let node = T::from(next);
+    (
+        NodeBuilder {
+            node,
+            next,
+        },
+        node,
+    )
+}
+
+impl<T> NodeBuilder<T> {
+    pub fn new(commands: &mut Commands) -> NodeBuilder<T>
     where T: From<Entity> + Copy {
         let next = commands.spawn().id();
-        let node = T::from(next);
-        (
-            NodeStub {
-                node,
-                next,
-            },
-            node,
-        )
-    }
-
-    pub fn with_commands<'a>(self, commands: &'a mut Commands<'a>) -> NodeBuilder<'a, T> {
         NodeBuilder {
-            node: self.node,
-            next: self.next,
-            commands,
+            node: T::from(next),
+            next,
         }
     }
 }
 
-impl<'a, T> NodeBuilder<'a, T> {
-    pub fn add<P>(self, part: P) -> P::Return
-    where P: NodePart<NodeBuilder<'a, T>> {
-        part.add_to(self)
+impl<T> NodeBuilder<T> {
+    pub fn add<P>(self, part: P, commands: &mut Commands) -> P::Return
+    where P: NodePart<NodeBuilder<T>> {
+        part.add_to(self, commands)
     }
 }
 
 //TODO: implement
 #[derive(Bundle)]
-struct LineBundle{
-    line: Line,
+pub struct LineBundle {
+    line: Option<Line>
+}
+
+impl LineBundle {
+    pub fn blank() -> LineBundle {
+        LineBundle {
+            line: None,
+        }
+    }
+
+    pub fn dialogue(speaker: Speaker, dialogue: &str) -> LineBundle {
+        LineBundle {
+            line: None,
+        }
+    }
+
+    pub fn with<T>(self, modifier: T) -> LineBundle {
+        LineBundle {
+            line: None,
+        }
+    }
+}
+
+//TODO: implement
+#[derive(Clone)]
+pub struct Clear(pub ConceptFilter);
+
+#[derive(Clone)]
+pub struct Music(pub Handle<AudioSource>);
+
+pub struct Question(pub &'static str);
+
+pub struct Answer;
+
+// TODO: implement
+#[derive(Copy,Clone)]
+pub struct Speaker {
+    pub talk_animation: &'static str,
 }
 
 struct NextLine(Entity);
 
-impl<'a, T> NodePart<NodeBuilder<'a, T>> for LineBundle {
-    type Return = NodeBuilder<'a, T>;
+impl<T> NodePart<NodeBuilder<T>> for LineBundle {
+    type Return = NodeBuilder<T>;
 
-    fn add_to(self, builder: NodeBuilder<'a, T>) -> NodeBuilder<'a, T> {
-        let next = builder.commands.spawn().id();
-        builder.commands
+    fn add_to(self, builder: NodeBuilder<T>, commands: &mut Commands) -> NodeBuilder<T> {
+        let next = commands.spawn().id();
+        commands
             .entity(builder.next)
             .insert_bundle(self)
             .insert(NextLine(next));
@@ -86,12 +117,29 @@ impl<'a, T> NodePart<NodeBuilder<'a, T>> for LineBundle {
 }
 
 //TODO: implement
-struct JumpChoice;
-struct TunnelChoice;
+pub struct Choice;
+pub struct JumpChoice;
+pub struct TunnelChoice;
+
+impl Choice {
+    pub fn new() -> Choice {
+        Choice
+    }
+
+    pub fn option<B>(self, concept: ConceptFilter, branch: B) -> B::ChoiceType
+    where B: BranchNode<JumpChoice> {
+        JumpChoice::from(self).option(concept, branch)
+    }
+}
 
 impl JumpChoice {
     fn bundle(self) -> () {
         ()
+    }
+
+    pub fn option<B>(self, concept: ConceptFilter, branch: B) -> B::ChoiceType
+    where B: BranchNode<JumpChoice> {
+        branch.add_to(self, concept)
     }
 }
 
@@ -99,14 +147,69 @@ impl TunnelChoice {
     fn bundle(self, next: Entity) -> () {
         ()
     }
+
+    pub fn option<B>(self, concept: ConceptFilter, branch: B) -> B::ChoiceType
+    where B: BranchNode<TunnelChoice> {
+        branch.add_to(self, concept)
+    }
 }
 
-impl<'a, T> NodePart<NodeBuilder<'a, T>> for TunnelChoice {
-    type Return = NodeBuilder<'a, T>;
+impl From<Choice> for JumpChoice {
+    fn from(choice: Choice) -> Self {
+        JumpChoice
+    }
+}
 
-    fn add_to(self, builder: NodeBuilder<'a, T>) -> NodeBuilder<'a, T> {
-        let next = builder.commands.spawn().id();
-        builder.commands
+impl From<JumpChoice> for TunnelChoice {
+    fn from(choice: JumpChoice) -> Self {
+        TunnelChoice
+    }
+}
+
+pub trait BranchNode<C> {
+    type ChoiceType;
+
+    fn add_to(self, parent: C, concept: ConceptFilter) -> Self::ChoiceType;
+}
+
+impl BranchNode<JumpChoice> for TreeNode {
+    type ChoiceType = JumpChoice;
+
+    fn add_to(self, parent: JumpChoice, concept: ConceptFilter) -> JumpChoice {
+        parent
+    }
+}
+
+impl BranchNode<TunnelChoice> for TreeNode {
+    type ChoiceType = TunnelChoice;
+
+    fn add_to(self, parent: TunnelChoice, concept: ConceptFilter) -> TunnelChoice {
+        parent
+    }
+}
+
+impl BranchNode<JumpChoice> for TunnelNode {
+    type ChoiceType = TunnelChoice;
+
+    fn add_to(self, parent: JumpChoice, concept: ConceptFilter) -> TunnelChoice {
+        BranchNode::<TunnelChoice>::add_to(self, TunnelChoice::from(parent), concept)
+    }
+}
+
+impl BranchNode<TunnelChoice> for TunnelNode {
+    type ChoiceType = TunnelChoice;
+
+    fn add_to(self, parent: TunnelChoice, concept: ConceptFilter) -> TunnelChoice {
+        parent
+    }
+}
+
+impl<T> NodePart<NodeBuilder<T>> for TunnelChoice {
+    type Return = NodeBuilder<T>;
+
+    fn add_to(self, builder: NodeBuilder<T>, commands: &mut Commands) -> NodeBuilder<T> {
+        let next = commands.spawn().id();
+        commands
             .entity(builder.next)
             .insert_bundle(self.bundle(next));
 
@@ -117,33 +220,57 @@ impl<'a, T> NodePart<NodeBuilder<'a, T>> for TunnelChoice {
     }
 }
 
-impl<'a> NodePart<NodeBuilder<'a, TreeNode>> for JumpChoice {
-    type Return = ();
+impl NodePart<NodeBuilder<TreeNode>> for JumpChoice {
+    type Return = TreeNode;
 
-    fn add_to(self, builder: NodeBuilder<'a, TreeNode>) -> () {
-        builder.commands
+    fn add_to(self, builder: NodeBuilder<TreeNode>, commands: &mut Commands) -> TreeNode {
+        commands
             .entity(builder.next)
             .insert_bundle(self.bundle());
+
+        builder.node
     }
 }
 
-struct Return;
+pub struct Jump(pub TreeNode);
 
-impl<'a> NodeBuilder<'a, TunnelNode> {
-    pub fn tunnel_return(self) -> () {
-        self.commands
-            .entity(self.next)
-            .insert(Return);
+impl NodePart<NodeBuilder<TreeNode>> for Jump {
+    type Return = TreeNode;
+
+    fn add_to(self, builder: NodeBuilder<TreeNode>, commands: &mut Commands) -> TreeNode {
+        commands
+            .entity(builder.next)
+            .insert(self);
+
+        builder.node
     }
 }
 
-struct GameOver;
+pub struct Return;
 
-impl<'a> NodeBuilder<'a, TreeNode> {
-    pub fn game_over(self) -> () {
-        self.commands
-            .entity(self.next)
-            .insert(GameOver);
+impl NodePart<NodeBuilder<TunnelNode>> for Return {
+    type Return = TunnelNode;
+
+    fn add_to(self, builder: NodeBuilder<TunnelNode>, commands: &mut Commands) -> TunnelNode {
+        commands
+            .entity(builder.next)
+            .insert(self);
+
+        builder.node
+    }
+}
+
+pub struct GameOver;
+
+impl NodePart<NodeBuilder<TreeNode>> for GameOver {
+    type Return = TreeNode;
+
+    fn add_to(self, builder: NodeBuilder<TreeNode>, commands: &mut Commands) -> TreeNode {
+        commands
+            .entity(builder.next)
+            .insert(self);
+
+        builder.node
     }
 }
 

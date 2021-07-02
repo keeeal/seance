@@ -16,6 +16,21 @@ pub struct Evoked(pub Duration);
 pub struct EvokesConcept(pub Entity);
 pub struct ClearsConcepts;
 
+#[derive(Clone)]
+pub enum ConceptFilter {
+    Any,
+    Concept(Entity),
+}
+
+impl ConceptFilter {
+    fn filter(&self, concept: &Entity) -> bool {
+        match self {
+            ConceptFilter::Any => true,
+            ConceptFilter::Concept(filter) => filter == concept,
+        }
+    }
+}
+
 fn evoke_concepts(
     evoke_query: Query<&EvokesConcept>,
     clear_query: Query<&ClearsConcepts>,
