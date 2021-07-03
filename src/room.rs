@@ -1,7 +1,7 @@
 use crate::animation::{animation_bundle, AnimationDefinition, BLINK_ANIMATION, TALK_ANIMATION};
 use crate::concepts::{Concept, EvokesConcept, ConceptFilter};
 use crate::ghost::{ghost_bundle, Clickable};
-use crate::dialogue::{new_node, LineBundle, NodeBuilder, Choice, Jump, Question, Answer, Speaker, Music, Return, Clear};
+use crate::dialogue::{new_node, LineBundle, NodeBuilder, Choice, Jump, Question, Answer, Speaker, Music, Return, Clear, GameOver};
 use bevy::prelude::{
     AppBuilder, AssetServer, Assets, Commands, IntoSystem, OrthographicCameraBundle, Plugin, Res,
     ResMut, SpriteSheetBundle, TextureAtlas, Transform, Vec2, Vec3,
@@ -96,7 +96,7 @@ pub fn startup(
     let madam_gretchen_talk = "medium_talk";
 
     let madam_gretchen = Speaker {
-        talk_animation: madam_gretchen_talk,
+        talk_animations: vec![madam_gretchen_talk],
     };
 
     // load mother
@@ -145,6 +145,15 @@ pub fn startup(
         ))
         .id();
 
+    let margaret_talk = "mother_talk";
+    let margaret_happy = "mother_happy";
+    let margaret_scared = "mother_scared";
+    let margaret_leave = "mother_leave";
+
+    let margaret = Speaker {
+        talk_animations: vec![margaret_talk],
+    };
+
     // load twin1
     let twin1_texture = asset_server.load("characters/twin1.png");
     let twin1_atlas = texture_atlases.add(TextureAtlas::from_grid(
@@ -190,6 +199,15 @@ pub fn startup(
             .collect(),
         ))
         .id();
+
+    let jasmine_talk = "twin1_talk";
+    let jasmine_happy = "twin1_happy";
+    let jasmine_scared = "twin1_scared";
+    let jasmine_leave = "twin1_leave";
+
+    let jasmine = Speaker {
+        talk_animations: vec![jasmine_talk],
+    };
 
     // load twin2
     let twin2_texture = asset_server.load("characters/twin2.png");
@@ -237,6 +255,19 @@ pub fn startup(
             .collect(),
         ))
         .id();
+
+    let melina_talk = "twin2_talk";
+    let melina_happy = "twin2_happy";
+    let melina_scared = "twin2_scared";
+    let melina_leave = "twin2_leave";
+
+    let melina = Speaker {
+        talk_animations: vec![melina_talk],
+    };
+
+    let twins = Speaker {
+        talk_animations: vec![jasmine_talk, melina_talk],
+    };
 
     // load ghost
     let ghost_texture = asset_server.load("ghost.png");
@@ -396,11 +427,12 @@ pub fn startup(
     let narrator_talk = "narrator_talk";
 
     let narrator = Speaker {
-        talk_animation: narrator_talk,
+        talk_animations: vec![narrator_talk],
     };
 
     let introduction_music = Music(asset_server.load("BGM_SC1_Introduction.mp3"));
     let piano_music = Music(asset_server.load("Repeating_Piano_Theme.mp3"));
+    let jewlery_box_music = Music(asset_server.load("Music_Box_Sound.mp3"));
 
     let s = Duration::from_secs(3);
 
@@ -409,6 +441,10 @@ pub fn startup(
     let (s1_q2_builder, s1_q2) = new_node(&mut commands);
     let (s1_a2_builder, s1_a2) = new_node(&mut commands);
     let (s1_q3_builder, s1_q3) = new_node(&mut commands);
+    let (s1_a3_builder, s1_a3) = new_node(&mut commands);
+    let (s1_q4_builder, s1_q4) = new_node(&mut commands);
+    let (s1_a4_builder, s1_a4) = new_node(&mut commands);
+    let (s1_q5_builder, s1_q5) = new_node(&mut commands);
 
     s1_introduction_builder
         .add(
@@ -419,7 +455,7 @@ pub fn startup(
             &mut commands,
         )
         .add(
-            LineBundle::dialogue(narrator, concat!(
+            LineBundle::dialogue(&narrator, concat!(
                 "The world is cold and dark as you wander the halls of a home you used ",
                 "to find great comfort in. Your desire to leave it all behind is ",
                 "palpable but still something keeps you here. The presence of the ones ",
@@ -431,7 +467,7 @@ pub fn startup(
             &mut commands,
         )
         .add(
-            LineBundle::dialogue(narrator, concat!(
+            LineBundle::dialogue(&narrator, concat!(
                 "Unconnected to the passage of time you watch strange happenings scare ",
                 "your family. Are you responsible? Why can’t you leave?",
             ))
@@ -439,7 +475,7 @@ pub fn startup(
             &mut commands,
         )
         .add(
-            LineBundle::dialogue(narrator, concat!(
+            LineBundle::dialogue(&narrator, concat!(
                 "Suddenly, a warm light draws you to your living room. Your family is ",
                 "congregated around the dining table with an old friend, a medium, ",
                 "Madam Gretchen. A seat sits empty beckoning you into the circle.",
@@ -457,7 +493,7 @@ pub fn startup(
             &mut commands,
         )
         .add(
-            LineBundle::dialogue(madam_gretchen, concat!(
+            LineBundle::dialogue(&madam_gretchen, concat!(
                 "As we join hands we focus our wills, Joining together the worlds of ",
                 "the dead and the living. We are reaching out to whoever haunts this ",
                 "place.",
@@ -465,14 +501,14 @@ pub fn startup(
             &mut commands,
         )
         .add(
-            LineBundle::dialogue(madam_gretchen, concat!(
+            LineBundle::dialogue(&madam_gretchen, concat!(
                 "Is someone here? If there is someone with us, give us a sign?",
             ))
             .with(Question("If there is someone with us, give us a sign?")),
             &mut commands,
         )
         .add(
-            LineBundle::dialogue(narrator, concat!(
+            LineBundle::dialogue(&narrator, concat!(
                 "The question coupled by the warm light strengthens your resolve.",
             ))
             .with("dialogue/NAR.S1.Q1.mp3"),
@@ -483,7 +519,7 @@ pub fn startup(
                 .option(ConceptFilter::Any,
                     NodeBuilder::new(&mut commands)
                         .add(
-                            LineBundle::dialogue(madam_gretchen, concat!(
+                            LineBundle::dialogue(&madam_gretchen, concat!(
                                 "Madam Gretchen: Ah yes, I can see you still have some influence on the material plane. This will help us communicate.",
                             ))
                             .with(Answer),
@@ -502,14 +538,14 @@ pub fn startup(
             &mut commands,
         )
         .add(
-            LineBundle::dialogue(madam_gretchen, concat!(
+            LineBundle::dialogue(&madam_gretchen, concat!(
                 "Who are you?",
             ))
             .with(Question("Who are you?")),
             &mut commands,
         )
         .add(
-            LineBundle::dialogue(narrator, concat!(
+            LineBundle::dialogue(&narrator, concat!(
                 "“Norm! It’s me Norm” You call out but no sound ",
                 "breaks the air. A portrait of a young and handsome Norman ",
                 "sits boldly above the fireplace.",
@@ -525,7 +561,7 @@ pub fn startup(
                 .option(ConceptFilter::Concept(norman_concept),
                     NodeBuilder::new(&mut commands)
                         .add(
-                            LineBundle::dialogue(madam_gretchen, concat!(
+                            LineBundle::dialogue(&madam_gretchen, concat!(
                                 "I believe it is Norman who is with us.",
                             ))
                             .with(Answer),
@@ -536,7 +572,7 @@ pub fn startup(
                 .option(ConceptFilter::Any, // TODO: repeatable
                     NodeBuilder::new(&mut commands)
                         .add(
-                            LineBundle::dialogue(madam_gretchen, concat!(
+                            LineBundle::dialogue(&madam_gretchen, concat!(
                                 "Hmm, that doesn't seem right.",
                             ))
                             .with(Clear(ConceptFilter::Any)),
@@ -547,441 +583,218 @@ pub fn startup(
             &mut commands,
         );
 
-    // let s1_margaret_q3_a = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Margaret: Wait, if it is Norm I want some proof...",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(6),
-    //             animations: vec!["mother_talk".to_string()],
-    //             requires_spoken: vec![s1_medium_q2],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
+    s1_q3_builder
+        .add(
+            LineBundle::dialogue(&margaret, concat!(
+                "Wait, if it is Norm I want some proof...",
+            )),
+            &mut commands,
+        )
+        .add(
+            LineBundle::dialogue(&margaret, concat!(
+                "Norm, What did you make here for our daughters’ third birthday?",
+            ))
+            .with(Question("What did you make for our daughters’ third birthday?")),
+            &mut commands,
+        )
+        .add(
+            LineBundle::dialogue(&narrator, concat!(
+                "A memory of sitting by the fireplace on a cold, winter’s morning as ",
+                "your two daughters unwrap a handcrafted jewellery box plays in your mind.",
+            ))
+            .with("dialogue/NAR.S1.Q3.1.mp3"),
+            &mut commands,
+        )
+        .add(Jump(s1_a3), &mut commands);
 
-    // let s1_margaret_q3_b = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Margaret: Norm, What did you make here for our daughters’ third birthday?",
-    //             ).to_string(),
-    //             priority: 5,
-    //             question: Some("What did you make for our daughters’ third birthday?".to_string()),
-    //             duration: Duration::from_secs(7),
-    //             animations: vec!["mother_talk".to_string()],
-    //             requires_spoken: vec![s1_margaret_q3_a],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
+    s1_a3_builder
+        .add(
+            Choice::new()
+                .option(ConceptFilter::Concept(music_box_concept),
+                    NodeBuilder::new(&mut commands)
+                        .add(
+                            LineBundle::dialogue(&narrator, concat!(
+                                "Narrator: As one of your daughters opens the lid, music starts to ",
+                                "play. The girls grimace but your wife smiles and a tear rolls down ",
+                                "her face. She has heard this song before.",
+                            ))
+                            .with("dialogue/NAR.S1.Q3.2.mp3")
+                            .with(jewlery_box_music)
+                            .with(Answer),
+                            &mut commands,
+                        )
+                        .add(
+                            LineBundle::dialogue(&margaret, concat!(
+                                "It’s really him. I used to sing this... Sniff *Looks down and tears*"
+                            )),
+                            &mut commands,
+                        )
+                        .add(
+                            LineBundle::blank()
+                                .with(margaret_scared),
+                            &mut commands,
+                        )
+                        .add(
+                            LineBundle::dialogue(&jasmine, concat!(
+                                "*jumps, and seems spooked by the music box*",
+                            ))
+                            .with(jasmine_scared),
+                            &mut commands,
+                        )
+                        .add(
+                            LineBundle::dialogue(&melina, concat!(
+                                "It's ok it's just dad",
+                            )),
+                            &mut commands,
+                        )
+                        .add(
+                            LineBundle::dialogue(&jasmine, concat!(
+                                "How do you know? I don’t remember my third birthday. Do you?",
+                            )),
+                            &mut commands,
+                        )
+                        .add(
+                            LineBundle::dialogue(&melina, concat!(
+                                "Well, ask something.",
+                            )),
+                            &mut commands,
+                        )
+                        .add(Jump(s1_q4), &mut commands),
+                ),
+            &mut commands,
+        );
 
-    // let s1_narrator_q3 = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Narrator: A memory of sitting by the fireplace on a cold, winter’s morning as ",
-    //                 "your two daughters unwrap a handcrafted jewellery box plays in your mind.",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(13),
-    //             animations: vec!["narrator_talk".to_string()],
-    //             requires_spoken: vec![s1_margaret_q3_b],
-    //             audio: Some(asset_server.load("dialogue/NAR.S1.Q3.1.mp3")),
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
+    s1_q4_builder
+        .add(
+            LineBundle::dialogue(&jasmine, concat!(
+                "Ok what was Melina’s favourite toy?"
+            ))
+            .with(Question("What was Melina’s favourite toy?"))
+            .with(piano_music),
+            &mut commands,
+        )
+        .add(
+            LineBundle::dialogue(&narrator, concat!(
+                "Another memory plays. Melina forcefully rocks up and ",
+                "down the hallway on a rocking horse while Jasmine slides behind ",
+                "her tethered by a rope lasso. Jasmine seems utterly unimpressed ",
+                "by her capture, soon to be jailed in the bedroom.",
+            ))
+            .with("dialogue/NAR.S1.Q4.mp3"),
+            &mut commands,
+        )
+        .add(Jump(s1_a4), &mut commands);
 
-    // let s1_q3_pause = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: "".to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(1),
-    //             requires_spoken: vec![s1_narrator_q3],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
+    s1_a4_builder
+        .add(
+            Choice::new()
+                .option(ConceptFilter::Concept(rocking_horse_concept),
+                    NodeBuilder::new(&mut commands)
+                        .add(
+                            LineBundle::dialogue(&melina, concat!(
+                                "Well it’s him alright. Why are you scaring us dad? Don't ",
+                                "you like us anymore? Is it another one of your tests!?"
+                            ))
+                            .with(Answer)
+                            .with(Question("Why are you scaring us?")),
+                            &mut commands,
+                        )
+                        .add(Jump(s1_q5), &mut commands),
+                )
+                .option(ConceptFilter::Any,
+                    NodeBuilder::new(&mut commands)
+                        .add(
+                            LineBundle::dialogue(&jasmine, concat!(
+                                "No, that's wrong. I don't think it's him!"
+                            ))
+                            .with(Clear(ConceptFilter::Any)),
+                            &mut commands,
+                        )
+                        .add(
+                            LineBundle::blank()
+                                .with(jasmine_scared),
+                            &mut commands,
+                        )
+                        .add(Jump(s1_a4), &mut commands),
+                ),
+            &mut commands,
+        );
 
-    // let s1_narrator_a3_a = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Narrator: As one of your daughters opens the lid, music starts to ",
-    //                 "play. The girls grimace but your wife smiles and a tear rolls down ",
-    //                 "her face. She has heard this song before.",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(4),
-    //             clear_question: true,
-    //             starts_animations: vec!["narrator_talk".to_string()],
-    //             requires_spoken: vec![s1_q3_pause],
-    //             requires_concepts: vec![music_box_concept],
-    //             consumes_concepts: vec![music_box_concept],
-    //             audio: Some(asset_server.load("dialogue/NAR.S1.Q3.2.mp3")),
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
 
-    // let s1_narrator_a3 = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Narrator: As one of your daughters opens the lid, music starts to ",
-    //                 "play. The girls grimace but your wife smiles and a tear rolls down ",
-    //                 "her face. She has heard this song before.",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(13),
-    //             ends_animations: vec!["narrator_talk".to_string()],
-    //             music: Some(asset_server.load("Music_Box_Sound.mp3")),
-    //             requires_spoken: vec![s1_narrator_a3_a],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_margaret_a3_a = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: "Margaret: It’s really him. I used to sing this... Sniff *Looks down and tears*".to_string(),
-    //             priority: 5,
-    //             stop_audio: true,
-    //             duration: Duration::from_secs(4),
-    //             animations: vec!["mother_talk".to_string()],
-    //             requires_spoken: vec![s1_narrator_a3],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_margaret_a3_b = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: "Margaret: It’s really him. I used to sing this... Sniff *Looks down and tears*".to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(3),
-    //             starts_animations: vec!["mother_scared".to_string()],
-    //             requires_spoken: vec![s1_margaret_a3_a],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_jasmine_a3_a = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: "*Jasmine jumps, and seems spooked by the music box*".to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(5),
-    //             starts_animations: vec!["twin1_scared".to_string()],
-    //             requires_spoken: vec![s1_margaret_a3_b],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_melina_a3_a = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: "Melina: Its ok its just dad".to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(5),
-    //             animations: vec!["twin2_talk".to_string()],
-    //             requires_spoken: vec![s1_jasmine_a3_a],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_jasmine_a3_b = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: "Jasmine: How do you know? I don’t remember my third birthday. Do you?".to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(7),
-    //             animations: vec!["twin1_talk".to_string()],
-    //             requires_spoken: vec![s1_melina_a3_a],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_melina_a3_b = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: "Melina: Well, ask something.".to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(4),
-    //             animations: vec!["twin2_talk".to_string()],
-    //             requires_spoken: vec![s1_jasmine_a3_b],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_jasmine_q4 = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: "Jasmine: Ok what was Melina’s favourite toy?".to_string(),
-    //             priority: 5,
-    //             question: Some("What was Melina’s favourite toy?".to_string()),
-    //             music: Some(asset_server.load("Repeating_Piano_Theme.mp3")),
-    //             duration: Duration::from_secs(6),
-    //             animations: vec!["twin1_talk".to_string()],
-    //             requires_spoken: vec![s1_melina_a3_b],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_narrator_q4 = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Narrator: Another memory plays. Melina forcefully rocks up and ",
-    //                 "down the hallway on a rocking horse while Jasmine slides behind ",
-    //                 "her tethered by a rope lasso. Jasmine seems utterly unimpressed ",
-    //                 "by her capture, soon to be jailed in the bedroom.",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(21),
-    //             animations: vec!["narrator_talk".to_string()],
-    //             requires_spoken: vec![s1_jasmine_q4],
-    //             audio: Some(asset_server.load("dialogue/NAR.S1.Q4.mp3")),
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_melina_a4 = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Melina: Well it’s him alright. Why are you scaring us dad? Don't ",
-    //                 "you like us anymore? Is it another one of your tests!?"
-    //             ).to_string(),
-    //             priority: 5,
-    //             question: Some("Why are you scaring us?".to_string()),
-    //             duration: Duration::from_secs(4),
-    //             animations: vec!["twin2_talk".to_string()],
-    //             requires_concepts: vec![rocking_horse_concept],
-    //             consumes_concepts: vec![rocking_horse_concept],
-    //             requires_spoken: vec![s1_narrator_q4],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let _s1_jasmine_a4_wrong = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: "Jasmine: No, that's wrong. I don't think it's him!".to_string(),
-    //             priority: -5,
-    //             duration: Duration::from_secs(6),
-    //             animations: vec!["twin1_talk".to_string()],
-    //             requires_any_concept: true,
-    //             consumes_all_concepts: true,
-    //             requires_spoken: vec![s1_narrator_q4],
-    //             conflicts_spoken: vec![s1_melina_a4],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_narrator_q5 = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Narrator: You wish to console your daughter about the happenings ",
-    //                 "but are unsure how to communicate. After all, you cannot talk. ",
-    //                 "You feel another memory start to stir but before you can catch it is gone.",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(19),
-    //             animations: vec!["narrator_talk".to_string()],
-    //             requires_spoken: vec![s1_melina_a4],
-    //             audio: Some(asset_server.load("dialogue/NAR.S1.Q5.mp3")),
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_medium_a5_a = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Madam Gretchen: We may have to build up to that one Melina. I ",
-    //                 "sense he doesn't know how to answer. Let's try to help him with ",
-    //                 "objects he remembers from his life. They are easier for spirits ",
-    //                 "to interact with.",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(10),
-    //             animations: vec!["medium_talk".to_string()],
-    //             requires_spoken: vec![s1_narrator_q5],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_jasmine_a5 = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Jasmine: Why is he so weak now? He had no problem tipping over our ",
-    //                 "bug collection in the loft!",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(10),
-    //             animations: vec!["twin1_talk".to_string()],
-    //             consumes_all_concepts: true,
-    //             clear_question: true,
-    //             requires_spoken: vec![s1_medium_a5_a],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_medium_a5_b = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Madam Gretchen: Patience, all shall be revealed in time.",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(6),
-    //             animations: vec!["medium_talk".to_string()],
-    //             requires_spoken: vec![s1_jasmine_a5],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_medium_a5_c = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Madam Gretchen: Now get something that represents the earth, and physicality. Maybe a coin.",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(7),
-    //             animations: vec!["medium_talk".to_string()],
-    //             requires_spoken: vec![s1_medium_a5_b],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_margaret_a5 = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Margaret: I know I have a coin collection built up from his various ",
-    //                 "trips away. He always brought back a new coin from everywhere he visited.",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(12),
-    //             animations: vec!["mother_talk".to_string()],
-    //             requires_spoken: vec![s1_medium_a5_c],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_medium_a5_d = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Madam Gretchen: Excellent, go and get it and bring it into the room.",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(7),
-    //             animations: vec!["medium_talk".to_string()],
-    //             requires_spoken: vec![s1_margaret_a5],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_medium_a5_e = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Madam Gretchen: Now girls, we need a cup. Maybe Norm’s favourite glass... ",
-    //                 "or mug? and a book void of writing.",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(8),
-    //             animations: vec!["medium_talk".to_string()],
-    //             starts_animations: vec!["mother_leave".to_string()],
-    //             requires_spoken: vec![s1_medium_a5_d],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let s1_jasmine_and_melina_a5 = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "Jasmine and Melina: Yea we got it.",
-    //             ).to_string(),
-    //             priority: 5,
-    //             duration: Duration::from_secs(7),
-    //             animations: vec!["twin1_talk".to_string(), "twin2_talk".to_string()],
-    //             requires_spoken: vec![s1_medium_a5_e],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
-
-    // let _s1_end = commands
-    //     .spawn()
-    //     .insert(
-    //         Line {
-    //             text: concat!(
-    //                 "",
-    //             ).to_string(),
-    //             question: Some("This is the end of act 1. Acts 2 and 3 are not yet playable.".to_string()),
-    //             priority: 5,
-    //             duration: Duration::from_secs(1),
-    //             starts_animations: vec!["twin1_leave".to_string(), "twin2_leave".to_string()],
-    //             requires_spoken: vec![s1_jasmine_and_melina_a5],
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .id();
+    s1_q5_builder
+        .add(
+            LineBundle::dialogue(&narrator, concat!(
+                "You wish to console your daughter about the happenings ",
+                "but are unsure how to communicate. After all, you cannot talk. ",
+                "You feel another memory start to stir but before you can catch it is gone.",
+            ))
+            .with("dialogue/NAR.S1.Q5.mp3"),
+            &mut commands,
+        )
+        .add(
+            LineBundle::dialogue(&madam_gretchen, concat!(
+                "We may have to build up to that one Melina. I ",
+                "sense he doesn't know how to answer. Let's try to help him with ",
+                "objects he remembers from his life. They are easier for spirits ",
+                "to interact with.",
+            ))
+            .with(Answer),
+            &mut commands,
+        )
+        .add(
+            LineBundle::dialogue(&jasmine, concat!(
+                "Why is he so weak now? He had no problem tipping over our ",
+                "bug collection in the loft!",
+            )),
+            &mut commands,
+        )
+        .add(
+            LineBundle::dialogue(&madam_gretchen, concat!(
+                "Patience, all shall be revealed in time.",
+            )),
+            &mut commands,
+        )
+        .add(
+            LineBundle::dialogue(&madam_gretchen, concat!(
+                "Now get something that represents the earth, and physicality. Maybe a coin.",
+            )),
+            &mut commands,
+        )
+        .add(
+            LineBundle::dialogue(&margaret, concat!(
+                "I know I have a coin collection built up from his various ",
+                "trips away. He always brought back a new coin from everywhere he visited.",
+            )),
+            &mut commands,
+        )
+        .add(
+            LineBundle::dialogue(&madam_gretchen, concat!(
+                "Excellent, go and get it and bring it into the room.",
+            )),
+            &mut commands,
+        )
+        .add(
+            LineBundle::dialogue(&madam_gretchen, concat!(
+                "Now girls, we need a cup. Maybe Norm’s favourite glass... ",
+                "or mug? and a book void of writing.",
+            ))
+            .with(margaret_leave),
+            &mut commands,
+        )
+        .add(
+            LineBundle::dialogue(&twins, concat!(
+                "Yea we got it."
+            )),
+            &mut commands,
+        )
+        .add(
+            LineBundle::blank()
+                .with(Question("This is the end of act 1. Acts 2 and 3 are not yet playable."))
+                .with(jasmine_leave)
+                .with(melina_leave),
+            &mut commands,
+        )
+        .add(GameOver, &mut commands);
 }
 
 pub struct RoomPlugin;

@@ -67,7 +67,7 @@ impl LineBundle {
         }
     }
 
-    pub fn dialogue(speaker: Speaker, dialogue: &str) -> LineBundle {
+    pub fn dialogue(speaker: &Speaker, dialogue: &str) -> LineBundle {
         LineBundle {
             line: None,
         }
@@ -92,9 +92,9 @@ pub struct Question(pub &'static str);
 pub struct Answer;
 
 // TODO: implement
-#[derive(Copy,Clone)]
+#[derive(Clone)]
 pub struct Speaker {
-    pub talk_animation: &'static str,
+    pub talk_animations: Vec<&'static str>,
 }
 
 struct NextLine(Entity);
